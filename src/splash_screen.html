@@ -1,0 +1,63 @@
+<div class="splash-screen">
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // add line breaks to the title when adding to the html
+      // const titleText = "THE HUMANITARIAN\nADVENTURE";
+      const titleText = "CROSSING BOUNDARIES,\nVIRTUALLY";
+
+      const splashScreen = document.querySelector(".splash-screen");
+      const splashTitle = document.querySelector(".splash-text-container");
+      const pageTitle = document.getElementById("page-title");
+      h1 = document.querySelector(".splash-title");
+      cursor = document.createElement("span");
+      cursor.className = "cursor";
+      cursor.textContent = "|"; // Cursor character
+      h1.appendChild(cursor); // Append cursor to the title
+
+      async function setTitle() {
+        title = "";
+        for (let i = 0; i < titleText.length; i++) {
+          if (titleText[i] === "\n") {
+            title += "<br>"; // Add line break
+          } else {
+            title += titleText[i];
+          }
+          const htmlWithCursor = title + '<span class="cursor">|</span>'; // Add cursor
+
+          h1.innerHTML = htmlWithCursor; // Update the HTML with the cursor
+          // add a blink effect cursor
+          await new Promise((resolve) => setTimeout(resolve, 100)); // Delay for each character
+        }
+      }
+      setTimeout(() => {
+        setTitle().then(() => {
+          // After the title is set, remove the Cursor
+          const cursor = document.querySelector(".cursor");
+          if (cursor) {
+            cursor.remove();
+          }
+          const splashRect = splashTitle.getBoundingClientRect();
+          const pageRect = pageTitle.getBoundingClientRect();
+
+          // Calculate difference between centers
+          const deltaX = pageRect.left - splashRect.left;
+          const deltaY = pageRect.top - splashRect.top;
+          setTimeout(() => {
+            splashTitle.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+          }, 1000); // Hide after 1 seconds
+          setTimeout(() => {
+            splashScreen.classList.add("hidden");
+          }, 2000); // Hide after 2 seconds
+
+          setTimeout(() => {
+            splashScreen.style.display = "none"; // Hide splash screen after transition
+          }, 3500); // Adjust time to match the last character delay
+        });
+        pageTitle.appendChild(cursor); // Append cursor to the page title
+      }, 3000); // Adjust time to match the last character delay
+    });
+  </script>
+  <div class="splash-text-container">
+    <h1 class="splash-title"></h1>
+  </div>
+</div>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Minimal Portfolio</title>
+        <link rel="stylesheet" href="styles/style.css" />
+        <script type="importmap">
+            {
+                "imports": {
+                    "gaussian-splats-3d": "./lib/gaussian-splats-3d.module.js",
+                    "three": "./lib/three/build/three.module.js",
+                    "three/addons/": "./lib/three/examples/jsm/",
+                    "three/nodes": "./lib/three/examples/jsm/nodes/Nodes.js"
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div id="canvas-container">
+            <script type="module" src="src/globe.js"></script>
+            <script type="module">
+                import { initThreeJS } from './src/globe.js'
+                initThreeJS()
+                    .then(() => {
+                        console.log('Three.js initialized successfully.')
+                    })
+                    .catch((error) => {
+                        console.error('Error initializing Three.js:', error)
+                    })
+            </script>
+        </div>
+        <div class="card">
+            <div class="left">
+                <div>
+                    <h1 class="title">Hey, I'm Ireton Liu :)</h1>
+                    <div class="tab-content">
+                        <div id="about" class="tab-panel active">
+                            <p>This is a short introduction about me.</p>
+                        </div>
+                        <div id="projects" class="tab-panel">
+                            <p>Here are some of my recent works.</p>
+                        </div>
+                        <div id="contact" class="tab-panel">
+                            <p>Get in touch with me here.</p>
+                        </div>
+                    </div>
+                </div>
+                <!--
+                <img
+
+                    class="profile-pic"
+                    src="assets/images/me.jpg"
+                    alt="Profile Picture"
+                    />
+                -->
+                <div class="tabs">
+                    <button class="active" onclick="showTab('about', this)">
+                        About
+                    </button>
+                    <button onclick="showTab('projects', this)">
+                        Projects
+                    </button>
+                    <button onclick="showTab('contact', this)">Contact</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function showTab(id, el) {
+                document.querySelectorAll('.tab-panel').forEach((panel) => {
+                    panel.classList.remove('active')
+                })
+                document.getElementById(id).classList.add('active')
+
+                document.querySelectorAll('.tabs button').forEach((btn) => {
+                    btn.classList.remove('active')
+                })
+                el.classList.add('active')
+            }
+        </script>
+    </body>
+</html>
