@@ -32,20 +32,89 @@ export async function initThreeJS() {
         0.1,
         1000
     )
-    camera.position.z = 6
-    const lightDir = new THREE.Vector3(1, 1, 1).normalize()
-    const lightColor = 0xffffff
+    camera.position.z = 10
+    const lightDir = new THREE.Vector3(0, 1, 0).normalize()
+    const lightColor = 0xf9f9f9
 
     renderer.setClearColor(0x000000, 0) // Black with full transparency
 
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.update()
-    const axesHelper = new THREE.AxesHelper(5)
+    //const axesHelper = new THREE.AxesHelper(5)
 
-    scene.add(axesHelper)
+    //scene.add(axesHelper)
+
+    // ==============================================================
+    // noise texture generation
+    // ==============================================================
+    const cameraQuad = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+    const noiseScene = new THREE.Scene() // used for generating noise texture
+    const size = 128
+    const data = new Float32Array(size * size * size * 4) // RGBAc
+    const noiseRenderTarget = new THREE.WebGLRenderTarget(size, size, {
+        format: THREE.RGBAFormat,
+        type: THREE.FloatType,
+    })
+    const tex3D = new THREE.Data3DTexture(data, size, size, size)
+    tex3D.format = THREE.RGBAFormat
+    tex3D.type = THREE.FloatType
+    tex3D.minFilter = THREE.LinearFilter
+    tex3D.magFilter = THREE.LinearFilter
+    tex3D.wrapS = THREE.RepeatWrapping
+    tex3D.wrapT = THREE.RepeatWrapping
+    tex3D.wrapR = THREE.RepeatWrapping
+    tex3D.generateMipmaps = false
+    tex3D.unpackAlignment = 1
+    tex3D.needsUpdate = true
+    const generateNoiseShader = await loadShader(
+        'src/shaders/generate_noise_2d.frag'
+    )
+    const noiseMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            size: { value: size },
+            sliceZ: { value: 0.0 },
+        },
+        vertexShader: `
+        void main() {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+        fragmentShader: generateNoiseShader,
+    })
+    const noisePlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(2, 2),
+        noiseMaterial
+    )
+    noiseScene.add(noisePlane)
+
+    for (let z = 0; z < size; z++) {
+        // set uniform for slice index
+        noiseMaterial.uniforms.sliceZ.value = z / (size - 1)
+
+        // render quad
+        renderer.setRenderTarget(noiseRenderTarget)
+        renderer.render(noiseScene, cameraQuad)
+        renderer.setRenderTarget(null)
+
+        // read pixels
+        const buffer = new Float32Array(size * size * 4)
+        renderer.readRenderTargetPixels(
+            noiseRenderTarget,
+            0,
+            0,
+            size,
+            size,
+            buffer
+        )
+
+        // copy into 3D texture
+        for (let i = 0; i < size * size * 4; i++) {
+            data[z * size * size * 4 + i] = buffer[i]
+        }
+    }
 
     const lithosphereRadius = 3
-    const hydrosphereRadius = 2.9
+    const hydrosphereRadius = 3
     // ==============================================================
     // Globe shader
     // ==============================================================
@@ -170,6 +239,7 @@ export async function initThreeJS() {
                 uSphereRadius: { value: lithosphereRadius + 1.0 },
                 uInverseProjectionMatrix: { value: projectionMatrixInverse },
                 uInverseViewMatrix: { value: viewMatrixInverse },
+                uPrecomputedNoise: { value: tex3D },
             },
             vertexShader: `
                 varying vec4 vClipPos;

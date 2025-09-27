@@ -33,3 +33,25 @@ vec2 raySphereIntersect(vec3 rayOrigin, vec3 rayDir, vec3 sphereCenter,
   vec2 t = vec2(t0, t1);
   return t;
 }
+
+float saturate(float x) { return clamp(x, 0.0, 1.0); }
+
+vec3 cartesianToRadial(vec3 p, float R) {
+
+  float r = length(p);
+  vec3 d = normalize(p);
+  vec3 offset = vec3(0.0);
+  return d * (1.0 + (r - R) * 0.05) *
+         0.5; // small Cartesian contribution; // exaggerate the distanceh
+}
+
+vec3 cartesianToSpherical(vec3 p) {
+  float r = length(p);
+  float theta = acos(p.z / r); // polar angle
+  float phi = atan(p.y, p.x);  // azimuthal angle
+  return vec3(r, theta, phi);  // (r, theta, phi)
+}
+float smoothPump(float x, float shift) {
+  return smoothstep(0.0, 1.0, x + shift) * smoothstep(1.0, 0.0, x + shift) *
+         4.0;
+}

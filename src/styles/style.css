@@ -5,7 +5,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #1a1a1a;
+    /*background: #1a1a1a;*/
+    background: #cccccc;
     font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -13,11 +14,11 @@ body {
     display: flex;
     width: 80%;
     height: 80vh;
-    /*background: #f9f9f9;*/
+    background: #cccccc;
     /*background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);*/
-    background: #aaaa00;
+    /*background: #aaaa00;*/
     border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    /*box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);*/
     overflow: hidden;
 }
 

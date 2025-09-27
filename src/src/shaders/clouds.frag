@@ -17,36 +17,32 @@ uniform vec3 uLightDir;
 uniform vec3 uLightColor;
 uniform mat4 uInverseProjectionMatrix;
 uniform mat4 uInverseViewMatrix;
+uniform sampler3D uPrecomputedNoise;
 
-float sampleDensity(vec3 p) {
-  float freq = 4.0;
-  float pfbm = mix(1., perlinFbm(p, 4., 7), .5);
-  pfbm = abs(pfbm * 2. - 1.); // billowy perlin noise
-  float worleyFBM_g = worleyFbm(p, freq);
-  float worleyFBM_b = worleyFbm(p, freq * 2.0);
-  float worleyFBM_a = worleyFbm(p, freq * 4.0);
-  float perlinWorley = remap(pfbm, 0., 1., worleyFBM_g, 1.); // perlin-worley
-
-  float lowFrequencyFMB =
-      worleyFBM_g * .625 + worleyFBM_b * .25 + worleyFBM_a * .125;
-
-  float baseCloud = remap(perlinWorley, (1.0 - lowFrequencyFMB), 1., 0., 1.);
-  return baseCloud;
+float rand(vec2 co) {
+  return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453) * 0.001;
 }
 
-float lightMarch(vec3 ro, vec3 rd, vec3 start) {
+float noiseToCloud(vec4 noise) {
+  float lowFrequencyFBM = noise.g * .625 + noise.b * .125 + noise.a * .25;
+
+  float baseCloud = remap(noise.r, -(1.0 - lowFrequencyFBM), 1., 0., 1.);
+  return baseCloud;
+}
+float lightMarch(vec3 ro, vec3 rd) {
   int steps = 4;
   float distToEnd = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius).y;
   float stepSize = distToEnd / float(steps);
   vec3 sigma_t;
   float totalDensity = 0.0;
   for (int i = 0; i < steps; i++) {
-    vec3 pos = ro + rd * (float(i) * stepSize);
-    float density = sampleDensity(pos);
-    density = density * remap(density, .6, 1., 0., 1.); // fake cloud coverage
+    vec3 noisePos =
+        cartesianToRadial(ro + rd * (float(i) * stepSize), uSphereRadius);
+    vec4 noise = texture(uPrecomputedNoise, noisePos * 0.1);
+    float density = noiseToCloud(noise);
     totalDensity += max(density * stepSize, 0.0);
   }
-  return exp(-totalDensity * 10.0);
+  return exp(-totalDensity);
 }
 
 void main() {
@@ -63,7 +59,7 @@ void main() {
   vec3 ro = uCameraPos;
   vec3 rd = normalize(worldPos.xyz / worldPos.w - uCameraPos);
 
-  float thickness = 0.5;
+  float thickness = 1.0;
   vec2 tOuter = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius);
   vec2 tInner =
       raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius - thickness);
@@ -72,7 +68,9 @@ void main() {
   // the near plane, render the original scene
   vec4 original = texture2D(tDiffuse, uv);
   vec3 color;
-  // gl_FragColor = vec4(vec3(sampleDensity(vec3(uv, uTime))), 1.0);
+  // density = remap(density, 0.8, 1.0, 0.0, 1.0)
+  // gl_FragColor = vec4(vec3(density), 1.0);
+
   // return;
 
   // cloud is behind us
@@ -87,24 +85,24 @@ void main() {
     return;
   }
 
-  vec3 p = ro + rd * tOuter.x;
   // float density = sampleDensity(pos);
 
-  float marchDepth;
-  if (tInner.x < 0.0) {
-    marchDepth = tOuter.y - tOuter.x;
-  } else {
-    marchDepth = tInner.x - tOuter.x;
+  float marchDepth = tOuter.y - max(tOuter.x, 0.0);
+  if (depth < tOuter.y) {
+    marchDepth = depth - max(tOuter.x, 0.0);
   }
-  int steps = 4;
+
+  int steps = 24;
   float stepSize = marchDepth / float(steps);
   vec3 lightDir = uLightDir;
   vec3 transmittance = vec3(1.0);
   vec3 accumulation = vec3(0.0);
-  float sigma_s = 0.1;
+  float sigma_s = 0.8;
   vec3 omega_l = normalize(-lightDir);
   vec3 omega_w = -rd;
   float cosTheta = dot(omega_l, omega_w);
+  float densityThreshold = 0.8;
+  // assume light comse from camera direction
 
   // gl_FragColor = vec4(vec3(marchDepth), 1.0);
   // return;
@@ -115,54 +113,64 @@ void main() {
   // density *= coverage;
   // gl_FragColor = vec4(vec3(density), density);
   // return;
+  float distAlongRay = max(tOuter.x, 0.0);
   for (int i = 0; i < steps; i++) {
-    vec3 pos = ro + rd * (tOuter.x + float(i) * stepSize);
-    float distToCore = length(pos - uSphereCenter);
-    // modify density based on distance to the core of the sphere
-    float heightFactor =
-        remap(distToCore, uSphereRadius - thickness, uSphereRadius, 1.0, 0.0);
-    heightFactor *=
-        smoothstep(0.0, 1.0, remap(pos.y, -thickness, thickness, 0.0, 1.0));
+    distAlongRay += stepSize;
 
-    float density = sampleDensity(pos) * 10.0;
-    float coverage = perlinFbm(vec3(p) + vec3(5.0), 2., 7);
-    coverage = remap(coverage, 0.1, 1.0, 0.0, 1.0);
-    density = density * remap(density, coverage, 1.0, 0.0, 1.0);
-    density *= coverage;
-    density *= heightFactor;
-    density = max(density, 0.0);
+    vec3 pos = ro + (rd + rand(uv)) * (distAlongRay);
+    float r = length(pos - uSphereCenter);
+    float heightFraction = (r - (uSphereRadius - thickness)) / thickness;
+    float radialMask = smoothPump(heightFraction, 0.2);
+
+    // vec3 polar = cartesianToSpherical(pos - uSphereCenter);
+    vec3 randomOffset = vec3(texture(uPrecomputedNoise, vec3(uv, 0.5)).xyz);
+    vec3 noisePos = cartesianToRadial(pos - uSphereCenter, uSphereRadius) +
+                    0.01 * randomOffset;
+
+    // modify density based on distance to the core of the sphere
+    // float density = max(sampleDensity(noisePos / PI), 0.0) * radialMask;
+    vec4 noise = texture(uPrecomputedNoise, noisePos);
+    float density = noiseToCloud(noise) * radialMask;
+    // threshold to change coverage
+    density = max(density - densityThreshold, 0.0) / (1.0 - densityThreshold);
+    // float density = noisePos * radialMask * 0.1;
 
     // Beer-Lambert law
-    // float lightTransmittance = lightMarch(pos + lightDir * 0.1, lightDir,
-    // pos);
-    float attenuation = exp(-density * stepSize);
-    accumulation +=
-        transmittance * sigma_s * phaseFunction(cosTheta, 0.8) * stepSize;
+    float lightTransmittance = lightMarch(pos + lightDir * 0.1, lightDir);
+    // float lightTransmittance = .9;
+    float attenuation = exp(-density * stepSize * 4.0);
+    accumulation += transmittance * lightTransmittance *
+                    phaseFunction(cosTheta, 0.0) * stepSize * density * 100.0;
     transmittance *= attenuation;
     if (length(transmittance) < 0.001) {
       break;
     }
   }
 
-  vec3 cloudColor = accumulation * uLightColor * 100.0;
-  vec3 backgroundColor;
-  float alpha;
+  vec3 cloudColor = vec3(1.0) * accumulation * uLightColor;
   if (depth < tOuter.y) {
-    backgroundColor = original.rgb * transmittance;
-    alpha = 1.0;
-    // gl_FragColor = vec4(cloudColor + backgroundColor, alpha);
-  } else {
-    backgroundColor = transmittance;
-    alpha = 1.0 - transmittance.r;
-    gl_FragColor = vec4(cloudColor, alpha);
+    // cloud is behind the globe
+    gl_FragColor = vec4(transmittance.r * original.rgb + cloudColor, 1.0);
+    return;
+  }
+  if (depth > 10.0) {
+    // background blend the clouds with the original scene
+    gl_FragColor =
+        vec4(mix(original.rgb, cloudColor, accumulation), original.a);
   }
 
-  // density = perlinFbm(pos, 2., 7);
-  // density = remap(density, 0.1, 1.0, 0.0, 1.0);
-  // gl_FragColor = vec4(vec3(density), density);
-  // return;
-  // high transmittance -> low alpha
-
-  // color = vec4(vec3(coverage), 1.0);
-  // gl_FragColor = color;
+  return;
 }
+// cloud is behind the globe
+// gl_FragColor = vec4(cloudColor, 1.0 - transmittance.r);
+//  gl_FragColor = vec4(cloudColor, 1.0 - transmittance.r);
+// return;
+
+// density = perlinFbm(pos, 2., 7);
+// density = remap(density, 0.1, 1.0, 0.0, 1.0);
+// gl_FragColor = vec4(vec3(density), density);
+// return;
+// high transmittance -> low alpha
+
+// color = vec4(vec3(coverage), 1.0);
+// gl_FragColor = color;

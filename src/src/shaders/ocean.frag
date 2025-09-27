@@ -62,7 +62,7 @@ void main() {
   // ==============================================================
   // Volume rendering via ray marching
   // ==============================================================
-  int steps = 16;
+  int steps = 1;
   float stepSize = max((end - tNear), 0.1) / float(steps);
   vec3 background = texture2D(tDiffuse, screenUV).rgb;
 
