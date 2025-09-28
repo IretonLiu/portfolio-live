@@ -32,7 +32,7 @@ export async function initThreeJS() {
         0.1,
         1000
     )
-    camera.position.z = 10
+    camera.position.z = 7
     const lightDir = new THREE.Vector3(0, 1, 0).normalize()
     const lightColor = 0xf9f9f9
 
@@ -296,12 +296,14 @@ export async function initThreeJS() {
         renderHeight = container.clientHeight
         // check if rendering is inprogress
         //
+        camera.aspect = renderWidth / renderHeight
+        camera.updateProjectionMatrix()
 
         renderer.setSize(renderWidth, renderHeight, true)
         rt.setSize(renderWidth, renderHeight)
-        camera.aspect = renderWidth / renderHeight
-        camera.updateProjectionMatrix()
+        rt2.setSize(renderWidth, renderHeight)
         effectComposer.setSize(renderWidth, renderHeight)
+
         terrainMaterial.uniforms.iResolution.value.set(
             renderWidth,
             renderHeight
@@ -328,7 +330,8 @@ export async function initThreeJS() {
         cloudPass.uniforms.uTime.value = frame * 0.0001
         cloudPass.uniforms.uCameraPos.value = camera.position
     }
-    animate()
+    render()
+    //animate()
 
     window.addEventListener('resize', () => {
         needsResize = true
