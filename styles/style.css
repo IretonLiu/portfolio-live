@@ -1,0 +1,252 @@
+body {
+    width: 100vw;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /*background: #1a1a1a;*/
+    /*gradient background, dark color on right*/
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.card {
+    display: flex;
+    width: 80%;
+    height: 80vh;
+    /*background: #aaaa00;*/
+    border-radius: 20px;
+    /*box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);*/
+    overflow: hidden;
+}
+
+.left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px;
+}
+
+.title {
+    font-size: 3rem;
+    font-weight: 600;
+    color: #111;
+    margin: 0 0 20px;
+    opacity: 0;
+    transform: translateX(-50px);
+    animation: slideFadeIn 0.8s ease forwards;
+}
+.profile-pic {
+    width: 20%;
+    left: 5%;
+    top: 30%;
+    object-fit: cover;
+    position: absolute;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transform: translateX(-50px);
+    animation: slideFadeIn 0.8s ease forwards;
+}
+
+@keyframes slideFadeIn {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.tab-content {
+    position: relative;
+    max-height: 700px;
+    max-width: 700px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px; /* space for scrollbar */
+    color: #111;
+    font-size: 1.2rem;
+} /* optional modern scrollbar */
+.tab-content::-webkit-scrollbar {
+    width: 8px;
+}
+.tab-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+.tab-content::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 4px;
+}
+.tab-content::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+.tab-panel {
+    opacity: 0;
+    transform: translateX(20px);
+    transition:
+        opacity 0.4s ease,
+        transform 0.4s ease;
+    position: absolute;
+    z-index: -1;
+}
+
+.tab-panel.active {
+    opacity: 1;
+    transform: translateX(0);
+    position: relative;
+    z-index: 1;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+}
+
+.tabs button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 10px;
+    background: #eee;
+    color: #222;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.tabs button.active {
+    background: #111;
+    color: #fff;
+}
+
+.tabs button:hover {
+    background: #bbb;
+}
+
+.right {
+    flex: 1;
+    background: #eaeaea;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.about-this {
+    width: 30%;
+    height: 30%;
+    right: -10%;
+    top: 10%;
+    position: fixed;
+    padding: 20px;
+}
+
+.about-this:hover {
+    cursor: pointer;
+}
+#canvas-container {
+    top: 10%;
+    left: 28%;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    pointer-events: none; /* allows clicks to pass through */
+    z-index: 9999; /* make sure it's on top */
+}
+/* Modern entry styles */
+.entry {
+    border-left: 4px solid #4f46e5; /* accent color */
+    margin-bottom: 16px;
+    cursor: pointer;
+    padding: 14px 18px;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+.entry:hover {
+    background: #f0f0ff; /* subtle color tint */
+    transform: translateX(4px);
+}
+
+.entry-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111;
+}
+
+.entry-content {
+    max-height: 0;
+    overflow: hidden;
+    transition:
+        max-height 0.4s ease,
+        opacity 0.3s ease;
+    opacity: 0;
+    padding-left: 6px;
+}
+
+.entry.expanded .entry-content {
+    max-height: 200px;
+    opacity: 1;
+    margin-top: 6px;
+}
+
+.entry-sub {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #4f46e5;
+    margin-bottom: 4px;
+}
+
+.entry p {
+    font-size: 0.85rem;
+    color: #444;
+    margin: 0;
+}
+.social-links {
+    display: flex;
+    gap: 20px;
+}
+
+.social-links a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    color: #111;
+    font-weight: 600;
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s,
+        background-color 0.2s;
+}
+
+.social-links a:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    background-color: #f0f0f5;
+}
+
+/* Icons (using inline SVG for simplicity) */
+.social-links svg {
+    width: 20px;
+    height: 20px;
+    fill: #111;
+    transition: fill 0.2s;
+}
+
+.social-links a:hover svg {
+    fill: #0072b1; /* LinkedIn blue for example */
+}
+
+/* Specific color for GitHub */
+.github:hover svg {
+    fill: #333; /* GitHub dark */
+}
+
+/* Specific color for LinkedIn */
+.linkedin:hover svg {
+    fill: #0077b5; /* LinkedIn blue */
+}
