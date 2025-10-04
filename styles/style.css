@@ -1,6 +1,7 @@
 :root {
     --primary-color: blue;
     --font-color: #eee;
+    --highlight-color: #b8c7ff;
     --font-size: 16px;
 }
 body {
@@ -13,8 +14,15 @@ body {
     /*background: #1a1a1a;*/
     /*gradient background, dark color on right*/
     /*background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);*/
-    background: #0f0f0f;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: radial-gradient(
+        circle at 30% 50%,
+        #0a1633 0%,
+        #050b1a 60%,
+        #01030a 100%
+    );
+    font-family: 'Space Mono', 'Roboto Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .card {
@@ -150,7 +158,7 @@ body {
     cursor: pointer;
 }
 #canvas-container {
-    top: 10%;
+    top: 5%;
     left: 28%;
     width: 100%;
     height: 100%;
@@ -160,7 +168,7 @@ body {
 }
 /* Modern entry styles */
 .entry {
-    border-left: 4px solid #4f46e5; /* accent color */
+    border-left: 4px solid var(--highlight-color); /* accent color */
     margin-bottom: 16px;
     cursor: pointer;
     padding: 14px 18px;
@@ -200,7 +208,7 @@ body {
 .entry-sub {
     font-size: 0.9rem;
     font-weight: 500;
-    color: #4f46e5;
+    color: var(--highlight-color);
     margin-bottom: 4px;
 }
 
@@ -211,6 +219,8 @@ body {
 .social-links {
     display: flex;
     gap: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 .social-links a {

@@ -44,7 +44,7 @@ export async function initThreeJS() {
     const light = new THREE.DirectionalLight(lightColor, 1.0)
     light.position.copy(lightDir)
     scene.add(light)
-    scene.add(new THREE.AmbientLight(0xffffff, 2.0)) // soft white light
+    scene.add(new THREE.AmbientLight(0xffffff, 3.0)) // soft white light
 
     renderer.setClearColor(0x000000, 0) // Black with full transparency
 

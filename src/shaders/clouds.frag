@@ -106,7 +106,7 @@ void main() {
     marchDepth = depth - max(tOuter.x, 0.0);
   }
 
-  int steps = 28;
+  int steps = 20;
   float stepSize = marchDepth / float(steps);
   vec3 lightDir = uLightDir;
   vec3 transmittance = vec3(1.0);
@@ -146,7 +146,7 @@ void main() {
     // float lightTransmittance = .9;
     float attenuation = exp(-density * stepSize * 4.0);
     accumulation += transmittance * lightTransmittance *
-                    phaseFunction(cosTheta, 0.1) * stepSize * density * 80.0;
+                    phaseFunction(cosTheta, 0.1) * stepSize * density * 75.0;
     transmittance *= attenuation;
     if (length(transmittance) < 0.001) {
       break;
