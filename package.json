@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "build": "rollup -c",
+    "build": "cp -r src/* build/portfolio/ ",
     "dev": "rollup -c -w",
     "demo": "node util/server.js -d src"
   },

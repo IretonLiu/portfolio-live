@@ -32,8 +32,8 @@ vec3 cartesianToRadial(vec3 p, float R) {
   float r = length(p);
   vec3 d = normalize(p) * 0.9;
   vec3 offset = vec3(0.0);
-  return d * (1.0 + (r - R) * 0.5) *
-         0.5; // small Cartesian contribution; // exaggerate the distanceh
+  return d * (1.0 + (r - R) * 0.2) * 0.4;
+  // small Cartesian contribution; // exaggerate the distanceh
 }
 
 float noiseToCloud(vec4 noise) {
@@ -44,7 +44,7 @@ float noiseToCloud(vec4 noise) {
 }
 
 float lightMarch(vec3 ro, vec3 rd, float radialMask) {
-  int steps = 4;
+  int steps = 3;
   float distToEnd = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius).y;
   float stepSize = distToEnd / float(steps);
   vec3 sigma_t;
@@ -73,7 +73,7 @@ void main() {
   vec3 ro = uCameraPos;
   vec3 rd = normalize(worldPos.xyz / worldPos.w - uCameraPos);
 
-  float thickness = 1.0;
+  float thickness = 4.0;
   vec2 tOuter = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius);
   vec2 tInner =
       raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius - thickness);
@@ -116,17 +116,8 @@ void main() {
   vec3 omega_w = -normalize(rd);
   float cosTheta = dot(omega_l, omega_w);
   float densityThreshold = 0.80;
-  // assume light comse from camera direction
 
-  // gl_FragColor = vec4(vec3(marchDepth), 1.0);
-  // return;
-  // float coverage = perlinFbm(pos + vec3(uTime), 2., 7);
-  // coverage = remap(coverage, 0.1, 1.0, 0.0, 1.0);
-  // density = sampleDensity(pos + vec3(uTime));
-  // density = remap(density, coverage, 1.0, 0.0, 1.0);
-  // density *= coverage;
-  // gl_FragColor = vec4(vec3(density), density);
-  // return;
+  // assume light comes from camera direction
   float distAlongRay = max(tOuter.x, 0.0);
 
   for (int i = 0; i < steps; i++) {
@@ -137,7 +128,6 @@ void main() {
     float heightFraction = (r - (uSphereRadius - thickness)) / thickness;
     float radialMask = smoothPump(heightFraction, 0.0);
 
-    // vec3 polar = cartesianToSpherical(pos - uSphereCenter);
     vec3 randomOffset = vec3(texture(uPrecomputedNoise, vec3(uv, 0.5)).xyz);
     vec3 noisePos = cartesianToRadial(pos - uSphereCenter, uSphereRadius) +
                     0.01 * randomOffset;
@@ -154,9 +144,9 @@ void main() {
     float lightTransmittance =
         lightMarch(pos + lightDir * 0.1, lightDir, radialMask);
     // float lightTransmittance = .9;
-    float attenuation = exp(-density * stepSize * 8.0);
+    float attenuation = exp(-density * stepSize * 4.0);
     accumulation += transmittance * lightTransmittance *
-                    phaseFunction(cosTheta, 0.1) * stepSize * density * 200.0;
+                    phaseFunction(cosTheta, 0.1) * stepSize * density * 80.0;
     transmittance *= attenuation;
     if (length(transmittance) < 0.001) {
       break;
