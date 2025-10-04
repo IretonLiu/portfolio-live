@@ -257,3 +257,7 @@ body {
 .linkedin:hover svg {
     fill: #0077b5; /* LinkedIn blue */
 }
+
+.about-this img {
+    filter: invert(0);
+}
