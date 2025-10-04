@@ -1,3 +1,8 @@
+:root {
+    --primary-color: blue;
+    --font-color: #eee;
+    --font-size: 16px;
+}
 body {
     width: 100vw;
     margin: 0;
@@ -7,7 +12,8 @@ body {
     align-items: center;
     /*background: #1a1a1a;*/
     /*gradient background, dark color on right*/
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    /*background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);*/
+    background: #0f0f0f;
     font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -32,7 +38,7 @@ body {
 .title {
     font-size: 3rem;
     font-weight: 600;
-    color: #111;
+    color: var(--font-color);
     margin: 0 0 20px;
     opacity: 0;
     transform: translateX(-50px);
@@ -59,12 +65,9 @@ body {
 
 .tab-content {
     position: relative;
-    max-height: 700px;
     max-width: 700px;
-    overflow-y: auto;
-    overflow-x: hidden;
     padding-right: 10px; /* space for scrollbar */
-    color: #111;
+    color: var(--font-color);
     font-size: 1.2rem;
 } /* optional modern scrollbar */
 .tab-content::-webkit-scrollbar {
@@ -74,11 +77,11 @@ body {
     background: transparent;
 }
 .tab-content::-webkit-scrollbar-thumb {
-    background: #bbb;
+    background: transparent;
     border-radius: 4px;
 }
 .tab-content::-webkit-scrollbar-thumb:hover {
-    background: #888;
+    background: transparent;
 }
 
 .tab-panel {
@@ -93,6 +96,9 @@ body {
 
 .tab-panel.active {
     opacity: 1;
+    max-height: 50vh;
+    overflow-x: hidden;
+    overflow-y: auto;
     transform: translateX(0);
     position: relative;
     z-index: 1;
@@ -115,7 +121,7 @@ body {
 }
 
 .tabs button.active {
-    background: #111;
+    background: #444;
     color: #fff;
 }
 
@@ -158,19 +164,21 @@ body {
     margin-bottom: 16px;
     cursor: pointer;
     padding: 14px 18px;
-    background: transparent;
+    /*background: #fff1;*/
+    background: linear-gradient(135deg, #ffffff11 0%, #ffffff00 100%);
     transition: all 0.3s ease;
+    color: var(--font-color);
 }
 
 .entry:hover {
-    background: #f0f0ff; /* subtle color tint */
+    background: linear-gradient(135deg, #f0f0ffff 0%, #f0f0ff55 100%);
     transform: translateX(4px);
+    color: #111;
 }
 
 .entry-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #111;
 }
 
 .entry-content {
@@ -198,7 +206,6 @@ body {
 
 .entry p {
     font-size: 0.85rem;
-    color: #444;
     margin: 0;
 }
 .social-links {

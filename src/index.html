@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <title>Minimal Portfolio</title>
+        <title>Ireton's Portfolio</title>
         <link rel="stylesheet" href="styles/style.css" />
         <script type="importmap">
             {
@@ -15,6 +15,12 @@
         </script>
     </head>
     <body>
+        <img
+            class="about-this"
+            src="assets/images/about_this.png"
+            alt="About This"
+            onclick="window.open('https://github.com/IretonLiu/portfolio-live', '_blank')"
+        />
         <div id="canvas-container">
             <script type="module" src="src/globe.js"></script>
             <script type="module">
@@ -171,7 +177,7 @@
                 moveCameraTo,
             } from './src/globe.js'
             // populate the tab content dynamically if needed
-            projects = {
+            let projects = {
                 sterkfontein: {
                     title: '3D Reconstruction of Sterkfontein Caves',
                     sub: 'Photogrammetry + MVS + RAW image processing (Python, C++)',
@@ -205,7 +211,7 @@
                     onclick: 'https://github.com/IretonLiu/n-body-simulation',
                 },
             }
-            experiences = {
+            let experiences = {
                 dragonfruit: {
                     title: 'Machine Learning Engineer Intern',
                     sub: 'Dragonfruit AI (US, remote) — 2025',
@@ -243,7 +249,7 @@
                     location: '1.9 2.7',
                 },
             }
-            publications = {
+            let publications = {
                 sterkfontein: {
                     title: 'A 3D Reconstruction of the Sterkfontein Caves using Novel View Synthesis',
                     sub: 'In progress (aiming CVPR 2026)',
