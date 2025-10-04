@@ -19,8 +19,21 @@ uniform mat4 uInverseProjectionMatrix;
 uniform mat4 uInverseViewMatrix;
 uniform sampler3D uPrecomputedNoise;
 
-float rand(vec2 co) {
-  return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453) * 0.001;
+mat3 rotationY(float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c);
+}
+
+vec3 cartesianToRadial(vec3 p, float R) {
+
+  mat3 rot = rotationY(uTime * 10.0);
+  p = rot * p;
+  float r = length(p);
+  vec3 d = normalize(p) * 0.9;
+  vec3 offset = vec3(0.0);
+  return d * (1.0 + (r - R) * 0.5) *
+         0.5; // small Cartesian contribution; // exaggerate the distanceh
 }
 
 float noiseToCloud(vec4 noise) {
@@ -29,7 +42,8 @@ float noiseToCloud(vec4 noise) {
   float baseCloud = remap(noise.r, -(1.0 - lowFrequencyFBM), 1., 0., 1.);
   return baseCloud;
 }
-float lightMarch(vec3 ro, vec3 rd) {
+
+float lightMarch(vec3 ro, vec3 rd, float radialMask) {
   int steps = 4;
   float distToEnd = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius).y;
   float stepSize = distToEnd / float(steps);
@@ -38,11 +52,11 @@ float lightMarch(vec3 ro, vec3 rd) {
   for (int i = 0; i < steps; i++) {
     vec3 noisePos =
         cartesianToRadial(ro + rd * (float(i) * stepSize), uSphereRadius);
-    vec4 noise = texture(uPrecomputedNoise, noisePos * 0.1);
+    vec4 noise = texture(uPrecomputedNoise, noisePos) * radialMask;
     float density = noiseToCloud(noise);
     totalDensity += max(density * stepSize, 0.0);
   }
-  return exp(-totalDensity);
+  return 0.5 + 0.5 * exp(-totalDensity * 1.0);
 }
 
 void main() {
@@ -92,16 +106,16 @@ void main() {
     marchDepth = depth - max(tOuter.x, 0.0);
   }
 
-  int steps = 24;
+  int steps = 28;
   float stepSize = marchDepth / float(steps);
   vec3 lightDir = uLightDir;
   vec3 transmittance = vec3(1.0);
   vec3 accumulation = vec3(0.0);
   float sigma_s = 0.8;
-  vec3 omega_l = normalize(-lightDir);
-  vec3 omega_w = -rd;
+  vec3 omega_l = normalize(lightDir);
+  vec3 omega_w = -normalize(rd);
   float cosTheta = dot(omega_l, omega_w);
-  float densityThreshold = 0.8;
+  float densityThreshold = 0.80;
   // assume light comse from camera direction
 
   // gl_FragColor = vec4(vec3(marchDepth), 1.0);
@@ -114,13 +128,14 @@ void main() {
   // gl_FragColor = vec4(vec3(density), density);
   // return;
   float distAlongRay = max(tOuter.x, 0.0);
+
   for (int i = 0; i < steps; i++) {
     distAlongRay += stepSize;
 
     vec3 pos = ro + (rd + rand(uv)) * (distAlongRay);
     float r = length(pos - uSphereCenter);
     float heightFraction = (r - (uSphereRadius - thickness)) / thickness;
-    float radialMask = smoothPump(heightFraction, 0.2);
+    float radialMask = smoothPump(heightFraction, 0.0);
 
     // vec3 polar = cartesianToSpherical(pos - uSphereCenter);
     vec3 randomOffset = vec3(texture(uPrecomputedNoise, vec3(uv, 0.5)).xyz);
@@ -131,32 +146,34 @@ void main() {
     // float density = max(sampleDensity(noisePos / PI), 0.0) * radialMask;
     vec4 noise = texture(uPrecomputedNoise, noisePos);
     float density = noiseToCloud(noise) * radialMask;
-    // threshold to change coverage
-    density = max(density - densityThreshold, 0.0) / (1.0 - densityThreshold);
-    // float density = noisePos * radialMask * 0.1;
+    density = smoothstep(densityThreshold, 1.0, density);
+    //  threshold to change coverage
+    //  float density = noisePos * radialMask * 0.1;
 
     // Beer-Lambert law
-    float lightTransmittance = lightMarch(pos + lightDir * 0.1, lightDir);
+    float lightTransmittance =
+        lightMarch(pos + lightDir * 0.1, lightDir, radialMask);
     // float lightTransmittance = .9;
-    float attenuation = exp(-density * stepSize * 4.0);
+    float attenuation = exp(-density * stepSize * 8.0);
     accumulation += transmittance * lightTransmittance *
-                    phaseFunction(cosTheta, 0.0) * stepSize * density * 100.0;
+                    phaseFunction(cosTheta, 0.1) * stepSize * density * 200.0;
     transmittance *= attenuation;
     if (length(transmittance) < 0.001) {
       break;
     }
   }
 
-  vec3 cloudColor = vec3(1.0) * accumulation * uLightColor;
+  float T = clamp(transmittance.r, 0.0, 1.0);
+  float alpha = 1.0 - T;
+  vec3 cloudColor = accumulation * uLightColor;
+  vec3 finalColor = cloudColor + T * original.rgb;
+  // if the cloud is in front of the globe but behind the terrain, blend the
+  // cloud with the terrain
   if (depth < tOuter.y) {
     // cloud is behind the globe
-    gl_FragColor = vec4(transmittance.r * original.rgb + cloudColor, 1.0);
-    return;
-  }
-  if (depth > 10.0) {
-    // background blend the clouds with the original scene
-    gl_FragColor =
-        vec4(mix(original.rgb, cloudColor, accumulation), original.a);
+    gl_FragColor = vec4(finalColor, 1.0);
+  } else {
+    gl_FragColor = vec4(finalColor, alpha);
   }
 
   return;

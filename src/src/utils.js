@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js'
 async function loadShader(url) {
     return fetch(url).then((response) => {
         if (!response.ok) {
@@ -8,6 +9,16 @@ async function loadShader(url) {
         }
         return response.text()
     })
+}
+async function loadObj(url) {
+    const loader = new OBJLoader()
+    // load a resource
+    try {
+        const obj = await loader.loadAsync(url)
+        return obj
+    } catch (err) {
+        console.error(`Failed to load obj from ${url}: ${err}`)
+    }
 }
 
 function loadWrappedTexture(path) {
@@ -32,4 +43,4 @@ function addBarycentricCoordinates(geometry) {
     return geometry
 }
 
-export { loadShader, loadWrappedTexture, addBarycentricCoordinates }
+export { loadShader, loadWrappedTexture, addBarycentricCoordinates, loadObj }

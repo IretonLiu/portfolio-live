@@ -1,5 +1,9 @@
 #define PI 3.14159265359
 
+float rand(vec2 co) {
+  return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453) * 0.001;
+}
+
 float phaseFunction(float cosTheta, float g) {
   // Henyey-Greenstein phase function with g=0.85
   return (1.0 - g * g) /
@@ -36,21 +40,6 @@ vec2 raySphereIntersect(vec3 rayOrigin, vec3 rayDir, vec3 sphereCenter,
 
 float saturate(float x) { return clamp(x, 0.0, 1.0); }
 
-vec3 cartesianToRadial(vec3 p, float R) {
-
-  float r = length(p);
-  vec3 d = normalize(p);
-  vec3 offset = vec3(0.0);
-  return d * (1.0 + (r - R) * 0.05) *
-         0.5; // small Cartesian contribution; // exaggerate the distanceh
-}
-
-vec3 cartesianToSpherical(vec3 p) {
-  float r = length(p);
-  float theta = acos(p.z / r); // polar angle
-  float phi = atan(p.y, p.x);  // azimuthal angle
-  return vec3(r, theta, phi);  // (r, theta, phi)
-}
 float smoothPump(float x, float shift) {
   return smoothstep(0.0, 1.0, x + shift) * smoothstep(1.0, 0.0, x + shift) *
          4.0;

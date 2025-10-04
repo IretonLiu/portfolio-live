@@ -7,7 +7,6 @@
         <script type="importmap">
             {
                 "imports": {
-                    "gaussian-splats-3d": "./lib/gaussian-splats-3d.module.js",
                     "three": "./lib/three/build/three.module.js",
                     "three/addons/": "./lib/three/examples/jsm/",
                     "three/nodes": "./lib/three/examples/jsm/nodes/Nodes.js"
@@ -134,14 +133,6 @@
                     </div>
                 </div>
 
-                <!--
-                <img
-
-                    class="profile-pic"
-                    src="assets/images/me.jpg"
-                    alt="Profile Picture"
-                    />
-                -->
                 <div class="tabs">
                     <button class="active" onclick="showTab('about', this)">
                         About
@@ -173,33 +164,45 @@
                 el.classList.add('active')
             }
         </script>
-        <script>
+        <script type="module">
+            import {
+                hidePointer,
+                showPointer,
+                moveCameraTo,
+            } from './src/globe.js'
             // populate the tab content dynamically if needed
             projects = {
                 sterkfontein: {
                     title: '3D Reconstruction of Sterkfontein Caves',
-                    sub: 'Photogrammetry + MVS +RAW image processing (Python, C++)',
+                    sub: 'Photogrammetry + MVS + RAW image processing (Python, C++)',
                     desc: 'Fast High-resolution 3D reconstruction of the Sterkfontein Caves using NeRFs and RAW image data.',
+                    onclick: 'https://youtu.be/lH6FNb9MxX8',
                 },
                 asperitas: {
                     title: 'Rendering the Asperitas Cloud Formation',
                     sub: 'Combining FFT and volumetric raymarching (Unity, C#, HLSL)',
                     desc: 'Realistic rendering of the rare Asperitas cloud formation using procedural noise and volumetric techniques.',
+                    onclick:
+                        'https://github.com/IretonLiu/realtime-procedural-asperitas',
                 },
                 ocean: {
                     title: 'Real-time Ocean Rendering',
                     sub: 'FFT-based wave simulation (Unity, C#, HLSL)',
                     desc: 'Procedural ocean simulation using Fast Fourier Transform and compute shaders.',
+                    onclick: 'https://github.com/IretonLiu/OceanSim-IFFT',
                 },
                 clouds: {
                     title: 'Volumetric Cloud Rendering',
                     sub: 'Noise + Raymarching (Unity, C#, HLSL)',
                     desc: 'Real-time volumetric rendering of clouds.',
+                    onclick:
+                        'https://github.com/IretonLiu/cloud-simulation-unity',
                 },
                 nbody: {
                     title: 'N-Body Simulation',
                     sub: 'MPI / CUDA (C++)',
                     desc: 'Parallel Barnes-Hut simulation for astrophysics.',
+                    onclick: 'https://github.com/IretonLiu/n-body-simulation',
                 },
             }
             experiences = {
@@ -207,26 +210,37 @@
                     title: 'Machine Learning Engineer Intern',
                     sub: 'Dragonfruit AI (US, remote) — 2025',
                     desc: 'Built and scaled distributed computing platforms for efficient AI training and inference.',
+                    location: '1.9 2.7',
                 },
                 epfl: {
                     title: 'Research Engineer Intern',
                     sub: 'EPFL (Switzerland) — 2025',
                     desc: '3D reconstruction project in collaboration with the ICRC.',
+                    location: '0.6 3.0',
+                },
+                brown: {
+                    title: 'Exchange Semester',
+                    sub: 'Brown University (US) — 2025',
+                    desc: 'Exhange research semester at Brown University, working on 3D reconstruction of the Sterkfontein Caves.',
+                    location: '0.8 -1.8',
                 },
                 pygio: {
                     title: 'Data Scientist',
                     sub: 'Pygio (South Africa) — 2023–2024',
                     desc: 'Designed machine learning models for financial forecasting and NLP.',
+                    location: '1.9 2.7',
                 },
                 halo: {
                     title: 'Robotics Engineer Intern',
                     sub: 'Halo, World! (Japan) — 2023',
                     desc: 'Implemented SLAM algorithms for autonomous navigation and 3D mapping.',
+                    location: '0.8 0.75',
                 },
                 wits: {
                     title: 'Sessional Lecturer',
                     sub: 'University of the Witwatersrand (South Africa) — 2023',
                     desc: 'Taught undergraduate courses on data structures and algorithms and computer graphics',
+                    location: '1.9 2.7',
                 },
             }
             publications = {
@@ -249,6 +263,7 @@
 
             function populateTabContent() {
                 let projectsContainer = document.getElementById('projects')
+
                 let experiencesContainer =
                     document.getElementById('experiences')
 
@@ -257,6 +272,11 @@
                 for (let key in projects) {
                     let project = projects[key]
                     let projectDiv = document.createElement('div')
+                    projectDiv.onclick = function () {
+                        if (project.onclick) {
+                            window.open(project.onclick, '_blank')
+                        }
+                    }
                     projectDiv.classList.add('entry')
                     let title = document.createElement('div')
                     title.classList.add('entry-title')
@@ -281,8 +301,13 @@
                     let experienceDiv = document.createElement('div')
                     experienceDiv.classList.add('entry')
                     experienceDiv.onclick = function () {
-                        console.log('Toggling expanded state')
-                        experienceDiv.classList.toggle('expanded')
+                        let coords = experience.location.split(' ')
+                        let theta = parseFloat(coords[0])
+                        let phi = parseFloat(coords[1])
+                        console.log(coords)
+                        moveCameraTo(theta, phi)
+                        hidePointer()
+                        showPointer()
                     }
 
                     let title = document.createElement('div')

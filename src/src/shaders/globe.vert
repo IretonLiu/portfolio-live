@@ -11,7 +11,7 @@ float remap(float x) { return log(x + 1.0); }
 void main() {
 
   float disp = texture2D(uDisplacementMap, uv).r;
-  disp = disp - 0.4;
+  disp = disp - 0.6109;
   vec3 dispPosition = position + normal * disp * dispScale;
 
   // vec3 dispPosition = position ;

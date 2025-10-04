@@ -35,6 +35,8 @@ void main() {
   float oceanDepth = linearizeDepth(gl_FragCoord.z, uCameraNear, uCameraFar);
   float terrainDepth =
       linearizeDepth(texture2D(tDepth, screenUV).x, uCameraNear, uCameraFar);
+  // if terrain is closer than ocean, discar
+  vec3 background = texture2D(tDiffuse, screenUV).rgb;
 
   // don't render ocean where there is land
 
@@ -64,14 +66,13 @@ void main() {
   // ==============================================================
   int steps = 1;
   float stepSize = max((end - tNear), 0.1) / float(steps);
-  vec3 background = texture2D(tDiffuse, screenUV).rgb;
 
   float g = 0.8; // anisotropy factor
   vec3 transmittance = vec3(1.0);
   vec3 accumulation = vec3(0.0);
   vec3 lightDir = uLightDir;
   vec3 sigma_a = uSigmaA;
-  vec3 sigma_s = vec3(0.3);
+  vec3 sigma_s = vec3(0.8);
   vec3 sigma_s_prime = sigma_s * (1.0 - g); // * 0.9;
   vec3 sigma_tr = sqrt(3.0 * sigma_a * (sigma_a + sigma_s_prime));
   vec3 sigma_t = sigma_a + sigma_s;
@@ -82,22 +83,28 @@ void main() {
 
   float z = 0.5;
 
-  for (int i = 0; i < steps; i++) {
-    vec3 pos = ro + rd * (tNear + float(i) * stepSize);
-    // Beer-Lambert law
-    vec3 attenuation = exp(-sigma_t * stepSize * 10.0);
-    vec3 inscatter =
-        transmittance * sigma_s * phaseFunction(cosTheta, g) * stepSize;
-    vec3 sss = 0.7 * inscatter * exp(-sigma_tr * z);
-    accumulation += sss + inscatter;
-    transmittance *= attenuation;
-    if (length(transmittance) < 0.001) {
-      break;
-    }
-  }
+  vec3 pos = ro + rd * (tNear + stepSize);
+  // Beer-Lambert law
+  vec3 attenuation = exp(-sigma_t * stepSize * 2.0);
+  vec3 inscatter =
+      transmittance * sigma_s * phaseFunction(cosTheta, g) * stepSize;
+  // vec3 sss = 0.7 * inscatter * exp(-sigma_tr * z);
+  accumulation += inscatter;
+  transmittance *= attenuation;
+  // if (length(transmittance) < 0.001) {
+  //   break;
+  // }
 
   vec3 oceanColor = accumulation * uLightColor;
+  if (background == vec3(0.0)) {
+    background = vec3(1.0);
+  }
+  // blend shore color if depth is shallow
+
+  oceanColor =
+      mix(vec3(0.0, 0.3, 0.5), oceanColor, smoothstep(0.0, 1.0, oceanDepth));
   vec3 color = accumulation + transmittance * background;
+  // vec3 color = background;
 
   //========================================
   // lighting
