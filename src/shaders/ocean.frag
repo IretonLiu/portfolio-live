@@ -72,22 +72,22 @@ void main() {
   vec3 accumulation = vec3(0.0);
   vec3 lightDir = uLightDir;
   vec3 sigma_a = uSigmaA;
-  vec3 sigma_s = vec3(0.8);
-  vec3 sigma_s_prime = sigma_s * (1.0 - g); // * 0.9;
-  vec3 sigma_tr = sqrt(3.0 * sigma_a * (sigma_a + sigma_s_prime));
-  vec3 sigma_t = sigma_a + sigma_s;
+  vec3 sigma_s = vec3(0.3); // scattering coefficient
+  // vec3 sigma_s_prime = sigma_s * (1.0 - g); // * 0.9;
+  // vec3 sigma_tr = sqrt(3.0 * sigma_a * (sigma_a + sigma_s_prime));
+  vec3 sigma_t = normalize(sigma_a + sigma_s); // extinction coefficient
 
   vec3 omega_l = normalize(-lightDir);
   vec3 omega_w = -rd;
   float cosTheta = dot(omega_l, omega_w);
 
-  float z = 0.5;
+  // float z = 0.5;
 
   vec3 pos = ro + rd * (tNear + stepSize);
   // Beer-Lambert law
   vec3 attenuation = exp(-sigma_t * stepSize * 2.0);
-  vec3 inscatter =
-      transmittance * sigma_s * phaseFunction(cosTheta, g) * stepSize;
+  vec3 inscatter = transmittance * sigma_s * phaseFunction(cosTheta, g) *
+                   uLightColor * 1.0 * stepSize;
   // vec3 sss = 0.7 * inscatter * exp(-sigma_tr * z);
   accumulation += inscatter;
   transmittance *= attenuation;
@@ -95,16 +95,21 @@ void main() {
   //   break;
   // }
 
-  vec3 oceanColor = accumulation * uLightColor;
+  // modify background based on depth
+  if (length(background) < 0.2) {
+    background = vec3(1.0);
+  }
+  background = mix(vec3(0.2, 0.5, 0.6) + background, background,
+                   smoothstep(0.0, -.2, vDisp));
+  vec3 oceanColor = accumulation + transmittance * background;
   if (background == vec3(0.0)) {
     background = vec3(1.0);
   }
   // blend shore color if depth is shallow
 
-  oceanColor =
-      mix(vec3(0.0, 0.3, 0.5), oceanColor, smoothstep(0.0, 1.0, oceanDepth));
-  vec3 color = accumulation + transmittance * background;
-  // vec3 color = background;
+  //  vec3 color = oceanColor + transmittance * background;
+  vec3 color = oceanColor;
+  //   vec3 color = background;
 
   //========================================
   // lighting
