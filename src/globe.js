@@ -58,7 +58,8 @@ export async function initThreeJS() {
     // ==============================================================
     const cameraQuad = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
     const noiseScene = new THREE.Scene() // used for generating noise texture
-    const size = 128
+
+    const size = 256
     const data = new Float32Array(size * size * size * 4) // RGBAc
     const noiseRenderTarget = new THREE.WebGLRenderTarget(size, size, {
         format: THREE.RGBAFormat,
@@ -249,7 +250,7 @@ export async function initThreeJS() {
                 uCameraNear: { value: camera.near },
                 uCameraFar: { value: camera.far },
                 uSphereCenter: { value: new THREE.Vector3(0, 0, 0) },
-                uSphereRadius: { value: lithosphereRadius + 1.0 },
+                uSphereRadius: { value: lithosphereRadius + 3.0 },
                 uInverseProjectionMatrix: { value: projectionMatrixInverse },
                 uInverseViewMatrix: { value: viewMatrixInverse },
                 uPrecomputedNoise: { value: tex3D },
