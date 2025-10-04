@@ -15,6 +15,33 @@
         </script>
     </head>
     <body>
+        <div class="loading" id="loading-screen">
+            <p></p>
+            <script>
+                const loadingText = document.querySelector('#loading-screen p')
+                let loading = true
+                window.addEventListener('globe-ready', () => {
+                    loading = false
+                    loadingText.textContent = 'Welcome to my portfolio!'
+                    setTimeout(() => {
+                        const loadingScreen =
+                            document.getElementById('loading-screen')
+                        loadingScreen.classList.add('fade-out')
+                    }, 500)
+                })
+                // text animation
+
+                let index = 0
+                const loadingChars = ['|', '/', '-', '\\']
+                setInterval(() => {
+                    if (loading) {
+                        loadingText.textContent = loadingChars[index % 4]
+                    }
+                    index++
+                }, 400)
+            </script>
+        </div>
+
         <img
             class="about-this"
             src="assets/images/inverted.png"

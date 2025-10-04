@@ -343,6 +343,11 @@ export async function initThreeJS() {
     }
 
     render()
+    // Dispatch a custom event
+    const event = new CustomEvent('globe-ready', {
+        detail: { time: performance.now() }, // optional data
+    })
+    window.dispatchEvent(event)
     // south africa
     moveCameraTo(1.9, 2.7)
     showPointer()
