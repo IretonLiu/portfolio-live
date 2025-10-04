@@ -284,7 +284,7 @@ body {
     background: #1a1a1a;
     z-index: 10000;
     color: var(--font-color);
-    transition: opacity 3s ease;
+    transition: opacity 1.5s ease;
 }
 .loading p {
     position: absolute;
