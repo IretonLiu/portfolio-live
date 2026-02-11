@@ -1,15 +1,36 @@
 {
-  "type": "module",
+  "name": "portfolio-next",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "build": "cp -r src/* build/portfolio/ ",
-    "dev": "rollup -c -w",
-    "demo": "node util/server.js -d src"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@types/three": "^0.182.0",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.27.1",
+    "leva": "^0.10.1",
+    "lucide-react": "^0.562.0",
+    "next": "16.1.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "tailwind-merge": "^3.4.0",
+    "three": "^0.182.0"
   },
   "devDependencies": {
-    "@rollup/plugin-alias": "^5.1.1",
-    "@rollup/plugin-commonjs": "^28.0.6",
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "rollup": "^2.79.2",
-    "rollup-plugin-terser": "^7.0.2"
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
