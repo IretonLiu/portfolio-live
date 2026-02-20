@@ -1,9 +1,12 @@
 import * as THREE from 'three'
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo, useEffect, forwardRef } from 'react'
 import { useFrame, useThree, extend } from '@react-three/fiber'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { fragmentShader as noiseFragmentShader } from './shaders/noiseShaders'
-import { fragmentShader as cloudFragmentShader } from './shaders/cloudShaders'
+import {
+    fragmentShader as cloudFragmentShader,
+    vertexShader as cloudVertexShader,
+} from './shaders/cloudShaders'
 
 // Register ShaderPass as a native JSX element <shaderPass />
 extend({ ShaderPass })
@@ -95,87 +98,96 @@ function use3DNoise(gl) {
     }, [gl, noiseFragmentShader])
 }
 
-export function CloudPass({
-    diffuseTexture,
-    depthTexture,
-    lightDir = new THREE.Vector3(1, 1, 1),
-    lithosphereRadius = 3.0,
-}) {
-    const { gl, camera, size } = useThree()
-    const passRef = useRef()
+export const CloudCompositor = forwardRef(
+    ({ diffuseTexture, depthTexture, lithosphereRadius = 3.0 }, ref) => {
+        const { gl, camera, size, viewport } = useThree()
 
-    const noiseTexture = use3DNoise(gl)
+        const noiseTexture = use3DNoise(gl)
 
-    // 2. Memoize the Material
-    // We use useMemo so we don't recreate the material on every render
-    const material = useMemo(() => {
-        return new THREE.ShaderMaterial({
-            uniforms: {
+        // We use useMemo so we don't recreate the material on every render
+        const uniforms = useMemo(
+            () => ({
                 tDiffuse: { value: null },
                 tDepth: { value: null },
                 uTime: { value: 0.0 },
+                uMousePoint: { value: new THREE.Vector3(999, 999, 999) },
+                uMouseHit: { value: 0.0 },
+                uBlendRadius: { value: 0.0 },
                 iResolution: {
-                    value: new THREE.Vector2(size.width, size.height),
+                    value: new THREE.Vector2(
+                        size.width * window.devicePixelRatio,
+                        size.height * window.devicePixelRatio
+                    ),
                 },
                 uCameraPos: { value: new THREE.Vector3() },
-                uLightDir: { value: new THREE.Vector3() },
-                uLightColor: { value: new THREE.Color(0xf9f9f9) },
+                uLightPos: { value: new THREE.Vector3(10, 10, 10) },
+                uLightColor: { value: new THREE.Color(0xaaaaaa) },
                 uCameraNear: { value: 0.1 },
-                uCameraFar: { value: 1000 },
+                uCameraFar: { value: 100 },
                 uSphereCenter: { value: new THREE.Vector3(0, 0, 0) },
+                // this is the radius of the outer shell of the clouds,
                 uSphereRadius: { value: lithosphereRadius + 3.0 },
+                uLithosphereRadius: { value: lithosphereRadius },
                 uInverseProjectionMatrix: { value: new THREE.Matrix4() },
                 uInverseViewMatrix: { value: new THREE.Matrix4() },
                 uPrecomputedNoise: { value: null },
-            },
-            vertexShader: `
-        varying vec4 vClipPos;
-        void main() {
-          vClipPos = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          gl_Position = vClipPos;
-        }
-      `,
-            fragmentShader: cloudFragmentShader,
-        })
-    }, [cloudFragmentShader, lithosphereRadius, size.width, size.height])
-
-    // 3. Connect Inputs
-    useEffect(() => {
-        if (material) {
-            material.uniforms.tDiffuse.value = diffuseTexture
-            material.uniforms.tDepth.value = depthTexture
-            material.uniforms.uPrecomputedNoise.value = noiseTexture
-            material.needsUpdate = true
-        }
-    }, [diffuseTexture, depthTexture, noiseTexture, material])
-
-    // 4. Update Uniforms per Frame
-    useFrame((state) => {
-        if (!passRef.current || !material) return
-
-        const { clock, camera } = state
-
-        // Update simple uniforms
-        material.uniforms.uTime.value = clock.getElapsedTime() * 0.1 // Scaled to match original 0.0001 frame increment
-        material.uniforms.uCameraPos.value.copy(camera.position)
-        material.uniforms.uLightDir.value.copy(lightDir)
-        material.uniforms.uCameraNear.value = camera.near
-        material.uniforms.uCameraFar.value = camera.far
-
-        // Update Matrices
-        // ThreeJS cameras auto-update projectionMatrixInverse
-        material.uniforms.uInverseProjectionMatrix.value.copy(
-            camera.projectionMatrixInverse
+            }),
+            [cloudFragmentShader, lithosphereRadius, size, gl]
         )
 
-        // The camera.matrixWorld is the inverse of the View Matrix
-        material.uniforms.uInverseViewMatrix.value.copy(camera.matrixWorld)
-    })
+        // 3. Connect Inputs
+        useEffect(() => {
+            const material = ref.current?.material as THREE.ShaderMaterial
+            if (material) {
+                material.uniforms.tDiffuse.value = diffuseTexture
+                material.uniforms.tDepth.value = depthTexture
+                material.uniforms.uPrecomputedNoise.value = noiseTexture
+                material.needsUpdate = true
+            }
+        }, [diffuseTexture, depthTexture, noiseTexture])
 
-    // Update resolution on resize
-    useEffect(() => {
-        material.uniforms.iResolution.value.set(size.width, size.height)
-    }, [size])
+        // 4. Update Uniforms per Frame
+        //useFrame((state) => {
+        //    if (!material) return
 
-    return <shaderPass ref={passRef} args={[material]} />
-}
+        //    const { clock, camera } = state
+        //    state.camera.updateMatrixWorld() // Ensure camera matrices are up-to-date
+
+        //    // Update simple uniforms
+        //    material.uniforms.uTime.value = clock.getElapsedTime() * 0.1 // Scaled to match original 0.0001 frame increment
+        //    material.uniforms.uCameraPos.value.copy(camera.position)
+        //    material.uniforms.uCameraNear.value = camera.near
+        //    material.uniforms.uCameraFar.value = camera.far
+
+        //    // Update Matrices
+        //    // ThreeJS cameras auto-update projectionMatrixInverse
+        //    material.uniforms.uInverseProjectionMatrix.value.copy(
+        //        camera.projectionMatrixInverse
+        //    )
+
+        //    // The camera.matrixWorld is the inverse of the View Matrix
+        //    material.uniforms.uInverseViewMatrix.value.copy(camera.matrixWorld)
+        //})
+
+        // Update resolution on resize
+        //useEffect(() => {
+        //    material.uniforms.iResolution.value.set(size.width, size.height)
+        //}, [size])
+
+        return (
+            <>
+                <mesh ref={ref} position={[0, 0, 0]}>
+                    <planeGeometry args={[2, 2]} />
+                    <shaderMaterial
+                        vertexShader={cloudVertexShader}
+                        fragmentShader={cloudFragmentShader}
+                        uniforms={uniforms}
+                        depthWrite={false}
+                        depthTest={false}
+                        transparent={true}
+                    />
+                </mesh>
+            </>
+        )
+    }
+)

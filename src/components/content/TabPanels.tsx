@@ -18,29 +18,28 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3 }}
-                        className="space-y-6 text-gray-300 leading-relaxed font-sans"
+                        className="space-y-6 text-gray-300 leading-relaxed font-mono"
                     >
+                        <h5 className="text-2xl font-light text-white tracking-tight"></h5>
                         <p>
-                            I specialize in computer graphics, machine learning
-                            and computer visions, with a strong foundation in
-                            both theory and practice. I have a deep
-                            understanding of the rendering pipeline and shader
-                            programming, which I often explore through creating
-                            shader art — a medium that lets me combine
-                            creativity with mathematics. My work reflects not
-                            only technical skills and creativity but also a
-                            genuine appreciation for the mathematical beauty
-                            behind visual computing.
+                            As a Computer Vision researcher by training and Data
+                            Scientist by profession, with a strong appreciation
+                            for creative coding and 3D graphics, I bring a
+                            unique blend of technical expertise and artistic
+                            sensibility to my work. I leverage this unique
+                            technical background to build interactive
+                            experiences that handle complex geometry and
+                            high-fidelity visuals, without compromising on
+                            performance.
                         </p>
-                        <p>My technical skills span across:</p>
                         <ul className="list-disc pl-5 space-y-2 marker:text-accent">
                             <li>
                                 <strong className="text-white font-mono text-sm font-normal tracking-wide uppercase">
                                     Rendering & Shader Programming
                                 </strong>
                                 <span className="block text-sm mt-1">
-                                    Real-time rendering, volumetric effects, and
-                                    GPU programming.
+                                    Real-time rendering techniques, shader
+                                    development, and GPU programming.
                                 </span>
                             </li>
                             <li>
@@ -48,34 +47,36 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                                     Computer Vision & Digital Image Processing
                                 </strong>{' '}
                                 <span className="block text-sm mt-1">
-                                    From 3D reconstruction to RAW image
+                                    3D reconstruction; Image signal processing;
+                                    Feature extraction; Deep learning for vision
+                                    tasks.
+                                </span>
+                            </li>
+                            <li>
+                                <strong className="text-white font-mono text-sm font-normal tracking-wide uppercase">
+                                    Data Science
+                                </strong>{' '}
+                                <span className="block text-sm mt-1">
+                                    Statistical modeling, data analysis, and ML
+                                    algorithms for vision and natual language
                                     processing.
                                 </span>
                             </li>
                             <li>
                                 <strong className="text-white font-mono text-sm font-normal tracking-wide uppercase">
-                                    Game Engines
+                                    High Performance Distributed Computing
                                 </strong>{' '}
                                 <span className="block text-sm mt-1">
-                                    Familiarity with modern engines (
-                                    <strong className="text-gray-100">
-                                        Unity
-                                    </strong>
-                                    ,{' '}
-                                    <strong className="text-gray-100">
-                                        Unreal
-                                    </strong>
-                                    ) game engines fundamentals (rendering loop,
-                                    physics, ECS).
+                                    AWS, CUDA, MPI, and distributed training
+                                    pipelines for ML.
                                 </span>
                             </li>
                             <li>
                                 <strong className="text-white font-mono text-sm font-normal tracking-wide uppercase">
-                                    High Performance Computing
+                                    3D Engines
                                 </strong>{' '}
                                 <span className="block text-sm mt-1">
-                                    CUDA, MPI, and distributed training
-                                    pipelines for ML.
+                                    React Three Fibre; Unity; Unreal Engine
                                 </span>
                             </li>
                             <li>
@@ -85,14 +86,6 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                                 <span className="block text-sm mt-1">
                                     Navigation and mapping algorithms for
                                     autonomous systems.
-                                </span>
-                            </li>
-                            <li>
-                                <strong className="text-white font-mono text-sm font-normal tracking-wide uppercase">
-                                    Fullstack Development
-                                </strong>{' '}
-                                <span className="block text-sm mt-1">
-                                    Backend, web, and mobile applications.
                                 </span>
                             </li>
                         </ul>
@@ -168,4 +161,3 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
         </div>
     )
 }
-

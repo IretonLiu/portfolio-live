@@ -19,8 +19,13 @@ void main() {
 
   // don't worry about the magic numbers :)
   float disp = texture2D(uDisplacementMap, uv).r- 60.0/255.0;
-  vec3 dispPosition = position + normal * disp*0.4;
 
+  // to address uv singularity at the poles
+  if (uv.y > 0.98) { 
+      disp = 0.0;
+  }
+
+  vec3 dispPosition = position + normal * disp*0.4;
   vDisp = disp;
   vNormal = normalize( normal);
   vTangent = normalize( tangent.xyz);
@@ -51,7 +56,7 @@ varying vec4 vShadowCoord;
 
 uniform float uTime;
 uniform vec2 iResolution;
-uniform vec3 uLightDir;
+uniform vec3 uLightPos;
 uniform vec3 uCameraPos;
 uniform vec3 uMousePoint;
 uniform float uMouseHit;
@@ -200,9 +205,13 @@ void main() {
 
 
     vec3 V = normalize(uCameraPos - vPosition);
-    vec3 L = normalize(uLightDir);
+    // update light position using the viewMatrix
+    vec3 lightPos = (vec4(uLightPos, 1.0) * viewMatrix).xyz;
+
+    vec3 L = normalize(lightPos - vPosition);
 
 
+    float depth = texture2D(uDisplacementMap, vUv).r;
     vec3 displacedNormal = getNormalFromMap(uDisplacementMap, vUv, 50.0, vec2(2048.0)); // Assuming 1024x1024 texture
     displacedNormal = normalize(vTBN * displacedNormal);
 
@@ -221,7 +230,7 @@ void main() {
         vec3 blendedNormal = mix(normalA, normalB, 0.5);
         vec3 waveNormal = normalize(vTBN * blendedNormal);
         MaterialParameters oceanMaterial = MaterialParameters(vec3(0.0), 0.0, 0.1, vec3(0.04)); // non-metallic, low roughness
-        earthColor = PBRLighting(waveNormal, V, L, earthAlbedo, oceanMaterial, lightParams);
+        earthColor = PBRLighting(waveNormal, V, L, earthAlbedo, oceanMaterial, lightParams)* depth;
 
     }else{
         earthColor = PBRLighting(displacedNormal, V, L, earthAlbedo, materialParams, lightParams);
@@ -237,12 +246,10 @@ void main() {
         vec3 warpedPosition = vec3(vPosition.x, vPosition.y, vPosition.z + sin(uTime * 80.0) * 0.5); // Add a pulsating effect
         float dist = length(warpedPosition - uMousePoint);
         float radius = uBlendRadius; // Adjust the radius of the effect
-        float edgeSoftness = 0.5; // Adjust how soft the edge of the effect is
+        float edgeSoftness = 1.0; // Adjust how soft the edge of the effect is
         float mask = smoothstep(radius + edgeSoftness, radius - edgeSoftness, dist);
         color = mix(color, earthColor, mask);
     }
-    //float shadow = getSelfOcclusion(); // 1.0 if lit, 0.0 if in shadow
-    //color *= shadow; // Apply shadowing
     gl_FragColor = vec4(color, 1.0);
 
 }

@@ -18,7 +18,7 @@ export const Entry: React.FC<EntryProps> = ({
 }) => {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: delay }}
             onClick={onClick}
@@ -44,4 +44,3 @@ export const Entry: React.FC<EntryProps> = ({
         </motion.div>
     )
 }
-

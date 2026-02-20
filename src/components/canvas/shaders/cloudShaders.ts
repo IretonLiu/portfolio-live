@@ -1,4 +1,14 @@
-export const fragmentShader = `
+export const vertexShader = /* glsl */ `
+varying vec4 vClipPos;
+varying vec2 vUv;
+void main() {
+  vClipPos = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vUv = uv;
+  gl_Position = vec4(position, 1.0); // Fullscreen quad in NDC
+}
+`
+
+export const fragmentShader = /* glsl */ `
 precision highp float;
 //==================================================================
 //Noise functions
@@ -102,6 +112,7 @@ float worleyFbm(vec3 p, float freq) {
 //===================================================================
 //Utility functions
 //===================================================================
+#define PI 3.14159265359
 
 float rand(vec2 co) {
   return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453) * 0.001;
@@ -141,7 +152,6 @@ vec2 raySphereIntersect(vec3 rayOrigin, vec3 rayDir, vec3 sphereCenter,
   return t;
 }
 
-float saturate(float x) { return clamp(x, 0.0, 1.0); }
 
 float smoothPump(float x, float shift) {
   return smoothstep(0.0, 1.0, x + shift) * smoothstep(1.0, 0.0, x + shift) *
@@ -152,17 +162,22 @@ float smoothPump(float x, float shift) {
 //Main shader
 //====================================================================
 varying vec4 vClipPos;
+varying vec2 vUv;
 
 uniform vec2 iResolution;
 uniform sampler2D tDiffuse;
 uniform sampler2D tDepth;
 uniform float uTime;
+uniform float uMouseHit;
+uniform vec3 uMousePoint;
+uniform float uBlendRadius;
 uniform float uSphereRadius;
+uniform float uLithosphereRadius;
 uniform float uCameraNear;
 uniform float uCameraFar;
 uniform vec3 uSphereCenter;
 uniform vec3 uCameraPos;
-uniform vec3 uLightDir;
+uniform vec3 uLightPos;
 uniform vec3 uLightColor;
 uniform mat4 uInverseProjectionMatrix;
 uniform mat4 uInverseViewMatrix;
@@ -176,13 +191,13 @@ mat3 rotationY(float angle) {
 
 vec3 cartesianToRadial(vec3 p, float R) {
 
-  mat3 rot = rotationY(uTime * 10.0);
+  mat3 rot = rotationY(uTime);
   p = rot * p;
   float r = length(p);
-  vec3 d = normalize(p) * 0.9;
+  vec3 d = normalize(p) ;
   vec3 offset = vec3(0.0);
-  return d * (1.0 + (r - R) * 0.2) * 0.4;
-  // small Cartesian contribution; // exaggerate the distanceh
+  return d * (1.0 + (r - R) * 0.18) * 0.4;
+  // small Cartesian contribution; // exaggerate the distance
 }
 
 float noiseToCloud(vec4 noise) {
@@ -193,131 +208,162 @@ float noiseToCloud(vec4 noise) {
 }
 
 float lightMarch(vec3 ro, vec3 rd, float radialMask) {
-  int steps = 3;
+  int steps = 4;
   float distToEnd = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius).y;
+  float distToGlobe = raySphereIntersect(ro, rd, uSphereCenter, uLithosphereRadius).y;
+  
+  // analytical occlusion factor based on distance to the globe
+  float occlusionFactor = 1.0;
+      occlusionFactor =1.0;
+
+
   float stepSize = distToEnd / float(steps);
   vec3 sigma_t;
   float totalDensity = 0.0;
+  float lightAbsorption = 0.0;
   for (int i = 0; i < steps; i++) {
     vec3 noisePos =
         cartesianToRadial(ro + rd * (float(i) * stepSize), uSphereRadius);
+
     vec4 noise = texture(uPrecomputedNoise, noisePos) * radialMask;
     float density = noiseToCloud(noise);
-    totalDensity += max(density * stepSize, 0.0);
+    totalDensity += max(density * stepSize * lightAbsorption, 0.0);
   }
-  return 0.5 + 0.5 * exp(-totalDensity * 1.0);
+  float sunIntensity = 1.0;
+
+  return (exp(-totalDensity))*sunIntensity* occlusionFactor;
 }
 
 void main() {
-  vec2 uv = gl_FragCoord.xy / iResolution.xy;
-  vec4 ndc = vClipPos / vClipPos.w;
-  vec4 viewPos = uInverseProjectionMatrix * ndc;
-  vec4 worldPos = uInverseViewMatrix * viewPos;
 
-  float depth = texture2D(tDepth, uv).x;
+    vec2 uv = vUv;
+    vec2 ndc = uv * 2.0 - 1.0;
+    vec4 clipPos = vec4(ndc, 0.0, 1.0);
+    vec4 viewPos = uInverseProjectionMatrix * clipPos;
+    viewPos /= viewPos.w;
+    vec4 worldPos = uInverseViewMatrix * viewPos;
 
-  // linearize depth
-  depth = linearizeDepth(depth, uCameraNear, uCameraFar);
 
-  vec3 ro = uCameraPos;
-  vec3 rd = normalize(worldPos.xyz / worldPos.w - uCameraPos);
 
-  float thickness = 4.0;
-  vec2 tOuter = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius);
-  vec2 tInner =
+    float depth = texture2D(tDepth, uv).x;
+    depth = linearizeDepth(depth, uCameraNear, uCameraFar);
+
+
+    vec3 ro = uCameraPos;
+
+    vec3 rd = normalize(worldPos.xyz - uCameraPos);
+
+    float thickness = 4.0;
+    vec2 tOuter = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius);
+    vec2 tInner =
       raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius - thickness);
-  // cases: tFar == -1 (no intersection), tNear == -1 (inside sphere), tNear
-  // >= 0 (outside sphere) if no intersection or the intersection is behind
-  // the near plane, render the original scene
-  vec4 original = texture2D(tDiffuse, uv);
-  vec3 color;
-  // density = remap(density, 0.8, 1.0, 0.0, 1.0)
-  // gl_FragColor = vec4(vec3(density), 1.0);
 
-  // return;
+    vec4 original = texture2D(tDiffuse, uv);
 
-  // cloud is behind us
-  if (tOuter.y < 0.0) {
-    gl_FragColor = original;
-    return;
-  }
+    vec3 color;
 
-  // globe is between us and the cloud
-  if (tOuter.y > depth && tOuter.x < -1.0) {
-    gl_FragColor = original;
-    return;
-  }
-
-  // float density = sampleDensity(pos);
-
-  float marchDepth = tOuter.y - max(tOuter.x, 0.0);
-  if (depth < tOuter.y) {
-    marchDepth = depth - max(tOuter.x, 0.0);
-  }
-
-  int steps = 20;
-  float stepSize = marchDepth / float(steps);
-  vec3 lightDir = uLightDir;
-  vec3 transmittance = vec3(1.0);
-  vec3 accumulation = vec3(0.0);
-  float sigma_s = 0.8;
-  vec3 omega_l = normalize(lightDir);
-  vec3 omega_w = -normalize(rd);
-  float cosTheta = dot(omega_l, omega_w);
-  float densityThreshold = 0.80;
-
-  // assume light comes from camera direction
-  float distAlongRay = max(tOuter.x, 0.0);
-
-  for (int i = 0; i < steps; i++) {
-    distAlongRay += stepSize;
-
-    vec3 pos = ro + (rd + rand(uv)) * (distAlongRay);
-    float r = length(pos - uSphereCenter);
-    float heightFraction = (r - (uSphereRadius - thickness)) / thickness;
-    float radialMask = smoothPump(heightFraction, 0.0);
-
-    vec3 randomOffset = vec3(texture(uPrecomputedNoise, vec3(uv, 0.5)).xyz);
-    vec3 noisePos = cartesianToRadial(pos - uSphereCenter, uSphereRadius) +
-                    0.01 * randomOffset;
-
-    // modify density based on distance to the core of the sphere
-    // float density = max(sampleDensity(noisePos / PI), 0.0) * radialMask;
-    vec4 noise = texture(uPrecomputedNoise, noisePos);
-    float density = noiseToCloud(noise) * radialMask;
-    density = smoothstep(densityThreshold, 1.0, density);
-    //  threshold to change coverage
-    //  float density = noisePos * radialMask * 0.1;
-
-    // Beer-Lambert law
-    float lightTransmittance =
-        lightMarch(pos + lightDir * 0.1, lightDir, radialMask);
-    // float lightTransmittance = .9;
-    float attenuation = exp(-density * stepSize * 4.0);
-    accumulation += transmittance * lightTransmittance *
-                    phaseFunction(cosTheta, 0.1) * stepSize * density * 75.0;
-    transmittance *= attenuation;
-    if (length(transmittance) < 0.001) {
-      break;
+    // cloud is behind us
+    if (tOuter.y < 0.0) {
+        gl_FragColor = original;
+        return;
     }
-  }
 
-  float T = clamp(transmittance.r, 0.0, 1.0);
-  float alpha = 1.0 - T;
-  vec3 cloudColor = accumulation * uLightColor;
-  vec3 finalColor = cloudColor + T * original.rgb;
-  // if the cloud is in front of the globe but behind the terrain, blend the
-  // cloud with the terrain
-  if (depth < tOuter.y) {
+    // globe is between us and the cloud
+    if (tOuter.y > depth && tOuter.x < -1.0) {
+        gl_FragColor = original;
+        return;
+    }
+
+
+    float marchDepth = 5.0;
+    if (depth < tOuter.y) {
+        marchDepth = depth - max(tOuter.x, 0.0);
+    }
+
+    int steps = 30;
+    float stepSize = marchDepth / float(steps);
+    vec3 lightPos = (vec4(uLightPos, 1.0) * viewMatrix).xyz;
+    vec3 lightDir = lightPos - worldPos.xyz;
+    vec3 transmittance = vec3(1.0);
+    vec3 accumulation = vec3(0.0);
+    vec3 omega_l = -normalize(lightDir);
+    vec3 omega_w = -normalize(rd);
+    float cosTheta = dot(omega_l, omega_w);
+    float densityThreshold = 0.80;
+
+    // assume light comes from camera direction
+    float distAlongRay = max(tOuter.x, 0.0);
+    float densityMultiplier = 1.0;
+    if (uMouseHit > 0.5) {
+        vec3 posiiton = ro + rd * depth;
+        float dist = length(posiiton - uMousePoint);
+        float radius = uBlendRadius; // Adjust the radius of the effect
+        float edgeSoftness = 1.0; // Adjust how soft the edge of the effect is
+        float mask = smoothstep(radius , radius - edgeSoftness, dist);
+        densityMultiplier = mix(1.0, 0.0, mask);
+    } 
+    for (int i = 0; i < steps; i++) {
+
+        vec3 pos = ro + (rd + rand(uv)) * (distAlongRay);
+        float r = length(pos - uSphereCenter);
+        float heightFraction = (r - (uSphereRadius - thickness)) / thickness;
+        float radialMask = smoothPump(heightFraction, 0.0);
+
+        vec3 randomOffset = vec3(texture(uPrecomputedNoise, vec3(uv, 0.5)).xyz);
+        vec3 noisePos = cartesianToRadial(pos - uSphereCenter, uSphereRadius)+ 0.01 * randomOffset;
+
+        // modify density based on distance to the core of the sphere
+        // float density = max(sampleDensity(noisePos / PI), 0.0) * radialMask;
+        vec4 noise = texture(uPrecomputedNoise, noisePos);
+        float density = noiseToCloud(noise) * densityMultiplier * radialMask;
+        density = smoothstep(densityThreshold, 1.0, density);
+        // Beer-Lambert law
+        float attenuation = exp(-density * stepSize*10.0);
+
+        float lightTransmittance =
+            lightMarch(pos, lightDir, radialMask)+0.01;
+        vec3 sunColor = uLightColor * lightTransmittance * 5.0;
+        vec3 finalLightColor = sunColor;
+
+
+
+        float forward = phaseFunction(cosTheta, .8);
+        float backward = phaseFunction(cosTheta, -0.3);
+        float phase = 0.7*forward + 0.3*backward;
+
+        accumulation += transmittance * finalLightColor * phase* stepSize * density * 75.0; 
+        transmittance *= attenuation;
+        if (length(transmittance) < 0.01) {
+            break;
+        }
+        distAlongRay += stepSize;
+    }
+
+    float T = clamp(transmittance.r, 0.0, 1.0);
+
+    float alpha = 1.0 - T;
+    vec3 cloudColor = accumulation;
+
+    vec3 finalColor;
+
+
+
+    float occlusion = lightMarch(worldPos.xyz, lightDir, 1.0);
+
+
+    finalColor = cloudColor + T * original.rgb * occlusion;
+    // if the cloud is in front of the globe but behind the terrain, blend the
+    // cloud with the terrain
+    if (depth < tOuter.y) {
     // cloud is behind the globe
-    gl_FragColor = vec4(finalColor, 1.0);
-  } else {
-    gl_FragColor = vec4(finalColor, alpha);
-  }
+        gl_FragColor = vec4(finalColor, 1.0);
+    } else {
+        gl_FragColor = vec4(finalColor, alpha);
+    }
 
-  return;
 }
 `
+
 // cloud is behind the globe
 // gl_FragColor = vec4(cloudColor, 1.0 - transmittance.r);
 //  gl_FragColor = vec4(cloudColor, 1.0 - transmittance.r);

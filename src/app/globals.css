@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 :root {
-    --background: #ffffff;
+    --background: #000000;
     --foreground: #f0f0f0;
     --accent: #ffae00; /* Amber for highlights */
 }
@@ -22,7 +22,8 @@ body {
         --font-sans
     ); /* Switch to sans for main text readability */
     min-height: 100vh;
-    overflow: hidden; /* Prevent body scroll, handle in containers */
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* Technical grid background pattern (optional, adds texture) */
@@ -34,7 +35,7 @@ body::before {
     width: 100%;
     height: 100%;
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(rgba(0, 0, 0, 1) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 50px 50px;
     pointer-events: none;

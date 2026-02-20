@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useMemo, useRef } from 'react'
+import React, { useMemo, useRef, useLayoutEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { globeVertexShader, globeFragmentShader } from './shaders/globeShaders'
-import { useControls } from 'leva'
 import { easing } from 'maath'
+import { forwardRef } from 'react'
+import { MapPointer } from './Pointer'
 // axes helper
 
 function RaySphereIntersection(
@@ -27,24 +28,21 @@ function RaySphereIntersection(
         return (-b - Math.sqrt(discriminant)) / (2.0 * a) // Return nearest intersection
     }
 }
-export const Globe = () => {
-    const meshRef = useRef<THREE.Mesh>(null)
+const PBR_PARAMS = {
+    metallic: 0.0,
+    roughness: 0.5,
+    emissive: '#000000',
+}
+
+const LIGHT_PARAMS = {
+    color: '#ffffff',
+    intensity: 1.0,
+}
+
+export const Globe = forwardRef(({ lightRef, ...props }, ref) => {
     const materialRef = useRef<THREE.ShaderMaterial>(null)
-    const lightRef = useRef()
+    const pointerHiddenRef = useRef(true)
     // leva for pbr parameters
-    const { metallic, roughness, emissive } = useControls(
-        'Material Parameters',
-        {
-            metallic: { value: 0.0, min: 0, max: 1, step: 0.01 },
-            roughness: { value: 1.0, min: 0, max: 1, step: 0.01 },
-            emissive: { value: '#222222' },
-        }
-    )
-    // light parameters
-    const { color, intensity } = useControls('Light Parameters', {
-        color: { value: '#ffffff' },
-        intensity: { value: 1.0, min: 0, max: 10, step: 0.1 },
-    })
 
     // Load textures
     const [displacementMap, textureMap, waveNormalA, waveNormalB] = useTexture([
@@ -54,18 +52,22 @@ export const Globe = () => {
         '/assets/textures/wave_b.png',
     ])
 
-    useMemo(() => {
+    // use layoueffect instead of useMemo to set the wrapping mode after the textures are loaded
+    useLayoutEffect(() => {
         ;[displacementMap, textureMap, waveNormalA, waveNormalB].forEach(
             (t) => {
                 t.wrapS = t.wrapT = THREE.RepeatWrapping
+                // t.needsUpdate = true
             }
         )
     }, [displacementMap, textureMap, waveNormalA, waveNormalB])
+
     const geometry = useMemo(() => {
         //let geom = new THREE.IcosahedronGeometry(3, 16)
         let geom = new THREE.SphereGeometry(3, 128, 128)
         geom.computeTangents() // Compute tangents for normal mapping if needed
         geom.computeVertexNormals() // Ensure normals are computed for lighting
+        // log position
         return geom
     }, [])
 
@@ -80,20 +82,23 @@ export const Globe = () => {
             uDisplacementMap: { value: displacementMap },
             uNormalMapA: { value: waveNormalA },
             uNormalMapB: { value: waveNormalB },
-            uLightDir: { value: new THREE.Vector3(1, 1, 1).normalize() },
+            uLightPos: { value: new THREE.Vector3(10, 10, 10) },
             uCameraPos: { value: new THREE.Vector3() },
+            // big thing to watch out for here:
+            // when updating the material parameters,
+            // be sure to update the value property instead of the entire object, otherwise the reference will change and the shader will recompile
             materialParams: {
                 value: {
-                    emissive: new THREE.Color(emissive),
-                    metallic: metallic,
-                    roughness: roughness,
+                    emissive: new THREE.Color(PBR_PARAMS.emissive),
+                    metallic: PBR_PARAMS.metallic,
+                    roughness: PBR_PARAMS.roughness,
                     F0: new THREE.Color(0.04, 0.04, 0.04), // Default for non-metals
                 },
             },
             lightParams: {
                 value: {
-                    color: new THREE.Color(color),
-                    intensity: intensity,
+                    color: new THREE.Color(LIGHT_PARAMS.color),
+                    intensity: LIGHT_PARAMS.intensity,
                 },
             },
             uShadowMap: { value: null }, // The Depth Texture from the light
@@ -102,106 +107,9 @@ export const Globe = () => {
         [displacementMap, textureMap]
     )
 
-    const rayOrigin = useMemo(() => new THREE.Vector3(), [])
-    const rayDir = useMemo(() => new THREE.Vector3(), [])
-    const sphereCenter = useMemo(() => new THREE.Vector3(), [])
-    const hitPoint = useMemo(() => new THREE.Vector3(), [])
-    var hit = false
-    var blendRadius = 0.0 // Radius for blending effect around hit point
-    useFrame((state, delta) => {
-        if (meshRef.current) {
-            const material = meshRef.current.material as THREE.ShaderMaterial
-            const t = state.clock.getElapsedTime() * 0.01 // Slow rotation
-
-            const lightDir = new THREE.Vector3(
-                Math.sin(t),
-                1,
-                Math.cos(t)
-            ).normalize()
-            lightRef.current.position.copy(lightDir.clone()) // Position light in the direction of lightDir
-            lightRef.current.updateMatrixWorld() // Update light's world matrix
-            material.uniforms.uTime.value = t
-            material.uniforms.uLightDir.value.copy(lightDir)
-            material.uniforms.uCameraPos.value.copy(state.camera.position)
-
-            rayOrigin.copy(state.camera.position)
-            rayDir
-                .set(state.mouse.x, state.mouse.y, 0.5)
-                .unproject(state.camera)
-                .sub(rayOrigin)
-                .normalize()
-
-            sphereCenter.set(0, 0, 0) // Assuming the globe is centered at the origin
-            const radius = 3 // Radius of the globe
-            const tHit = RaySphereIntersection(
-                rayOrigin,
-                rayDir,
-                sphereCenter,
-                radius
-            )
-            if (tHit > 0) {
-                hitPoint.copy(rayOrigin).add(rayDir.multiplyScalar(tHit))
-                material.uniforms.uMousePoint.value.copy(hitPoint)
-                hit = true
-                easing.damp(
-                    material.uniforms.uBlendRadius,
-                    'value', // The property we want to animate
-                    hit ? 1.5 : 0.0, // The Target
-                    0.25, // Smooth time (seconds to reach target)
-                    delta // Time since last frame
-                )
-                material.uniforms.uMouseHit.value = 1.0 // Indicate a hit
-                // start an animation
-            } else {
-                material.uniforms.uMousePoint.value.set(0, 0, 0) // Reset to default
-                material.uniforms.uMouseHit.value = 0.0 // Indicate no hit
-                material.uniforms.uBlendRadius.value = 0.0 // Reset blend radius
-                blendRadius = 0.0
-                hit = false
-            }
-
-            if (
-                lightRef.current &&
-                lightRef.current.shadow &&
-                lightRef.current.shadow.matrix
-            ) {
-                const shadow = lightRef.current.shadow
-                const shadowMatrix = shadow.matrix
-                material.uniforms.uShadowMatrix.value.copy(shadowMatrix)
-                if (shadow.map) {
-                    const texture = shadow.map.texture
-                    material.uniforms.uShadowMap.value = texture
-                }
-            }
-        }
-    })
     return (
         <>
-            <directionalLight
-                ref={lightRef}
-                castShadow
-                intensity={1.0} // Set to 0 if you only want the map/matrix, not the light
-                position={[2, 2, 2]}
-                shadow-bias={-0.001}
-                shadow-mapSize={[2048, 2048]} // 4K Texture for shadows (crispness)
-                shadow-radius={10} // Soft shadow edges
-            >
-                <orthographicCamera
-                    attach="shadow-camera"
-                    args={[-10, 10, 10, -10, 0.1, 50]}
-                />
-            </directionalLight>
-
-            <mesh
-                position={[0, -10, 0]}
-                rotation={[-Math.PI / 2, 0, 0]}
-                receiveShadow
-            >
-                <planeGeometry args={[100, 100]} />
-                <shadowMaterial opacity={0.5} />
-            </mesh>
-
-            <mesh ref={meshRef} geometry={geometry} castShadow>
+            <mesh ref={ref} geometry={geometry}>
                 <shaderMaterial
                     useRef={materialRef}
                     vertexShader={globeVertexShader}
@@ -211,4 +119,4 @@ export const Globe = () => {
             </mesh>
         </>
     )
-}
+})
