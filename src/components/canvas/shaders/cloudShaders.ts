@@ -181,6 +181,7 @@ uniform vec3 uLightPos;
 uniform vec3 uLightColor;
 uniform mat4 uInverseProjectionMatrix;
 uniform mat4 uInverseViewMatrix;
+uniform mat4 uWobbleMatrix;
 uniform sampler3D uPrecomputedNoise;
 
 mat3 rotationY(float angle) {
@@ -192,7 +193,7 @@ mat3 rotationY(float angle) {
 vec3 cartesianToRadial(vec3 p, float R) {
 
   mat3 rot = rotationY(uTime);
-  p = rot * p;
+  //p = rot * p;
   float r = length(p);
   vec3 d = normalize(p) ;
   vec3 offset = vec3(0.0);
@@ -252,6 +253,7 @@ void main() {
     vec3 ro = uCameraPos;
 
     vec3 rd = normalize(worldPos.xyz - uCameraPos);
+    rd = (uWobbleMatrix * vec4(rd, 0.0)).xyz;
 
     float thickness = 4.0;
     vec2 tOuter = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius);

@@ -99,7 +99,16 @@ function use3DNoise(gl) {
 }
 
 export const CloudCompositor = forwardRef(
-    ({ diffuseTexture, depthTexture, lithosphereRadius = 3.0 }, ref) => {
+    (
+        {
+            diffuseTexture,
+            depthTexture,
+            lithosphereRadius = 3.0,
+            position,
+            lightPosition,
+        },
+        ref
+    ) => {
         const { gl, camera, size, viewport } = useThree()
 
         const noiseTexture = use3DNoise(gl)
@@ -120,11 +129,12 @@ export const CloudCompositor = forwardRef(
                     ),
                 },
                 uCameraPos: { value: new THREE.Vector3() },
-                uLightPos: { value: new THREE.Vector3(10, 10, 10) },
+                uLightPos: { value: lightPosition },
                 uLightColor: { value: new THREE.Color(0xaaaaaa) },
                 uCameraNear: { value: 0.1 },
                 uCameraFar: { value: 100 },
-                uSphereCenter: { value: new THREE.Vector3(0, 0, 0) },
+                uWobbleMatrix: { value: new THREE.Matrix4() },
+                uSphereCenter: { value: position },
                 // this is the radius of the outer shell of the clouds,
                 uSphereRadius: { value: lithosphereRadius + 3.0 },
                 uLithosphereRadius: { value: lithosphereRadius },
@@ -135,7 +145,6 @@ export const CloudCompositor = forwardRef(
             [cloudFragmentShader, lithosphereRadius, size, gl]
         )
 
-        // 3. Connect Inputs
         useEffect(() => {
             const material = ref.current?.material as THREE.ShaderMaterial
             if (material) {
@@ -146,33 +155,21 @@ export const CloudCompositor = forwardRef(
             }
         }, [diffuseTexture, depthTexture, noiseTexture])
 
-        // 4. Update Uniforms per Frame
-        //useFrame((state) => {
-        //    if (!material) return
+        useFrame((state, delta) => {
+            const material = ref.current?.material as THREE.ShaderMaterial
+            state.camera.updateMatrixWorld() // Ensure camera matrices are up to date
 
-        //    const { clock, camera } = state
-        //    state.camera.updateMatrixWorld() // Ensure camera matrices are up-to-date
-
-        //    // Update simple uniforms
-        //    material.uniforms.uTime.value = clock.getElapsedTime() * 0.1 // Scaled to match original 0.0001 frame increment
-        //    material.uniforms.uCameraPos.value.copy(camera.position)
-        //    material.uniforms.uCameraNear.value = camera.near
-        //    material.uniforms.uCameraFar.value = camera.far
-
-        //    // Update Matrices
-        //    // ThreeJS cameras auto-update projectionMatrixInverse
-        //    material.uniforms.uInverseProjectionMatrix.value.copy(
-        //        camera.projectionMatrixInverse
-        //    )
-
-        //    // The camera.matrixWorld is the inverse of the View Matrix
-        //    material.uniforms.uInverseViewMatrix.value.copy(camera.matrixWorld)
-        //})
-
-        // Update resolution on resize
-        //useEffect(() => {
-        //    material.uniforms.iResolution.value.set(size.width, size.height)
-        //}, [size])
+            if (material) {
+                material.uniforms.uTime.value += delta
+                material.uniforms.uCameraPos.value.copy(state.camera.position)
+                material.uniforms.uInverseProjectionMatrix.value.copy(
+                    camera.projectionMatrixInverse
+                )
+                material.uniforms.uInverseViewMatrix.value.copy(
+                    camera.matrixWorld
+                )
+            }
+        })
 
         return (
             <>

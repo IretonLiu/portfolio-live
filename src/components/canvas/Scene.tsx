@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useRef, useMemo, useEffect } from 'react'
-import { useFrame, useThree, createPortal, extend } from '@react-three/fiber'
+import { useRef, useEffect } from 'react'
+import { useFrame, useThree, createPortal } from '@react-three/fiber'
 import {
     useFBO,
     Stats,
@@ -9,27 +9,19 @@ import {
     PerspectiveCamera,
 } from '@react-three/drei'
 import * as THREE from 'three'
-import { AxesHelper } from 'three'
 import { Globe } from './Globe'
-import { Ocean } from './Ocean'
 import { CloudCompositor } from './CloudCompositor'
-import { Leva } from 'leva'
-import { Effects } from '@react-three/drei'
 import { RaySphereIntersection } from './Utils'
 import { easing } from 'maath'
-import { MapPointer } from './Pointer'
+import { InfiniteStudio } from './InfiniteStudio'
+import ParallexCamera from './ParallaxCamera'
 
 const applySharedUniforms = (
     material: THREE.ShaderMaterial,
-    t: number,
     delta: number,
     tHit: number,
-    hitPoint: THREE.Vector3,
-    cameraPos: THREE.Vector3
+    hitPoint: THREE.Vector3
 ) => {
-    material.uniforms.uTime.value = t
-    material.uniforms.uCameraPos.value.copy(cameraPos)
-
     if (tHit > 0) {
         material.uniforms.uMousePoint.value.copy(hitPoint)
         material.uniforms.uMouseHit.value = 1.0
@@ -56,12 +48,21 @@ const applySharedUniforms = (
 }
 
 const radius = 3.0
+const globePosition = new THREE.Vector3(5, 0, 0)
+const cameraStartPos = new THREE.Vector3(0, 0, 15)
+const lightPosition = new THREE.Vector3(10, 10, 10)
+
 export const Scene = () => {
+    const { camera, gl, size, scene } = useThree()
     const globeRef = useRef<THREE.Mesh>(null)
     const cloudRef = useRef<THREE.Mesh>(null)
+    const backgroundRef = useRef<THREE.Mesh>(null)
     const lightRef = useRef<THREE.DirectionalLight>(null)
-    const { camera, gl, size, scene } = useThree()
-    const virtualScene = useMemo(() => new THREE.Scene(), [])
+    const virtualScene = useRef<THREE.Scene>(null)
+
+    if (virtualScene.current === null) {
+        virtualScene.current = new THREE.Scene()
+    }
 
     // Create FBO with depth buffer
     const fbo = useFBO(size.width, size.height, {
@@ -72,22 +73,30 @@ export const Scene = () => {
         format: THREE.RGBAFormat,
         type: THREE.UnsignedByteType,
     })
-    const [lightPos] = useState(() => new THREE.Vector3(10, 10, 10).normalize())
-    const [rayOrigin] = useState(() => new THREE.Vector3(), [])
-    const [rayDir] = useState(() => new THREE.Vector3(), [])
-    const [sphereCenter] = useState(() => new THREE.Vector3(0, 0, 0), [])
-    const [hitPoint] = useState(() => new THREE.Vector3(), [])
-    const [sharedUniform] = useState(() => {
-        return {
+    const rayOrigin = useRef<THREE.Vector3>(null)
+    const rayDir = useRef<THREE.Vector3>(null)
+    const hitPoint = useRef<THREE.Vector3>(null)
+    const sharedUniform = useRef<{
+        uMousePoint: { value: THREE.Vector3 }
+        uMouseHit: { value: number }
+        uBlendRadius: { value: number }
+        uTime: { value: number }
+        uLightDir: { value: THREE.Vector3 }
+    }>(null)
+
+    // Initialised all the null refs
+    if (rayOrigin.current === null) rayOrigin.current = new THREE.Vector3()
+    if (rayDir.current === null) rayDir.current = new THREE.Vector3()
+    if (hitPoint.current === null) hitPoint.current = new THREE.Vector3()
+    if (sharedUniform.current === null) {
+        sharedUniform.current = {
             uMousePoint: { value: new THREE.Vector3(999, 999, 999) },
             uMouseHit: { value: 0.0 },
             uBlendRadius: { value: 0 },
             uTime: { value: 0 },
             uLightDir: { value: new THREE.Vector3() },
-            uCameraPos: { value: new THREE.Vector3() },
         }
-    }, [])
-
+    }
     const isRaycastActive = useRef(false)
     useEffect(() => {
         const handleMove = () => {
@@ -103,87 +112,65 @@ export const Scene = () => {
     }, [])
 
     useFrame((state, delta) => {
-        // ------------------------------------------------
-        // STEP 1: FORCE CAMERA UPDATE
-        // ------------------------------------------------
         // We ensure the camera matrix is 100% up-to-date with OrbitControls
         // before we do ANY rendering.
-
         state.camera.updateMatrixWorld()
-        const t = state.clock.getElapsedTime() * 0.001
+        const mouseX = state.pointer.x
+        const mouseY = state.pointer.y
 
-        rayOrigin.copy(state.camera.position)
+        rayOrigin.current.copy(state.camera.position)
         if (isRaycastActive.current) {
-            rayDir
-                .set(state.mouse.x, state.mouse.y, 0.5)
+            rayDir.current
+                .set(mouseX, mouseY, 0.0)
                 .unproject(state.camera)
-                .sub(rayOrigin)
+                .sub(rayOrigin.current)
                 .normalize()
         } else {
-            rayDir
+            rayDir.current
                 .set(999, 999, -1)
                 .transformDirection(state.camera.matrixWorld)
         }
 
         const tHit = RaySphereIntersection(
-            rayOrigin,
-            rayDir,
-            sphereCenter,
+            rayOrigin.current,
+            rayDir.current,
+            globePosition,
             radius
         )
 
         if (tHit > 0) {
-            hitPoint.copy(rayOrigin).addScaledVector(rayDir, tHit)
+            hitPoint.current
+                .copy(rayOrigin.current)
+                .addScaledVector(rayDir.current, tHit)
         }
-
         if (globeRef.current) {
             applySharedUniforms(
                 globeRef.current.material as THREE.ShaderMaterial,
-                t,
                 delta,
                 tHit,
-                hitPoint,
-                state.camera.position
+                hitPoint.current
             )
         }
-        // Do the same for clouds
+
         if (cloudRef.current) {
             const cloudMaterial = cloudRef.current
                 .material as THREE.ShaderMaterial
-            applySharedUniforms(
-                cloudMaterial,
-                t,
-                delta,
-                tHit,
-                hitPoint,
-                state.camera.position
-            )
-            cloudMaterial.uniforms.uInverseProjectionMatrix.value.copy(
-                camera.projectionMatrixInverse
-            )
-            cloudMaterial.uniforms.uInverseViewMatrix.value.copy(
-                camera.matrixWorld
-            )
+            applySharedUniforms(cloudMaterial, delta, tHit, hitPoint.current)
         }
-        // ------------------------------------------------
-        // STEP 2: RENDER GLOBE TO FBO (Background)
-        // ------------------------------------------------
+
+        // Do the same for clouds
         gl.setRenderTarget(fbo)
         gl.clear()
-        gl.render(virtualScene, camera)
+        gl.render(virtualScene.current, camera)
 
-        // ------------------------------------------------
-        // STEP 3: RENDER SCREEN (Foreground)
-        // ------------------------------------------------
         gl.setRenderTarget(null)
-        // We manually render the main scene (containing CloudCompositor)
-        // This guarantees it uses the EXACT same camera position as Step 2.
         gl.render(scene, camera)
-    }, 1)
+    }, 0)
 
     return (
         <>
             <Stats showPanel={0} className="fixed top-0 left-0 z-20" />
+            <ParallexCamera amplitude={0.5} damping={0.1} />
             <PerspectiveCamera
                 makeDefault
                 position={[0, 0, 15]}
@@ -198,18 +185,26 @@ export const Scene = () => {
                     position={[2, 2, 2]}
                 ></directionalLight>
             </PerspectiveCamera>
-
-            <OrbitControls
-                makeDefault
-                enablePan={false}
-                enableZoom={false}
-                minDistance={8}
-                maxDistance={20}
-            />
             {/* Pass 1: Globe rendered into virtual scene */}
-            {createPortal(<Globe ref={globeRef} />, virtualScene)}
+            {createPortal(
+                <Globe
+                    ref={globeRef}
+                    position={globePosition}
+                    lightPosition={lightPosition}
+                />,
+                virtualScene.current
+            )}
+            <InfiniteStudio
+                ref={backgroundRef}
+                cameraPosition={camera.position}
+                globePosition={globePosition}
+                lightPosition={lightPosition}
+            />
+            {/* Background Shader: Renders to the full canvas */}
             <CloudCompositor
                 ref={cloudRef}
+                position={globePosition}
+                lightPosition={lightPosition}
                 diffuseTexture={fbo.texture}
                 depthTexture={fbo.depthTexture}
                 lithosphereRadius={3.0}

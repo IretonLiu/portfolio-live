@@ -39,9 +39,8 @@ const LIGHT_PARAMS = {
     intensity: 1.0,
 }
 
-export const Globe = forwardRef(({ lightRef, ...props }, ref) => {
+export const Globe = forwardRef(({ position, lightPosition }, ref) => {
     const materialRef = useRef<THREE.ShaderMaterial>(null)
-    const pointerHiddenRef = useRef(true)
     // leva for pbr parameters
 
     // Load textures
@@ -71,6 +70,15 @@ export const Globe = forwardRef(({ lightRef, ...props }, ref) => {
         return geom
     }, [])
 
+    useFrame((state, delta) => {
+        const material = ref.current?.material as THREE.ShaderMaterial
+        state.camera.updateMatrixWorld() // Ensure camera matrices are up to date
+        if (material) {
+            material.uniforms.uTime.value += delta * 0.01 // Slow down time for a more subtle effect
+            material.uniforms.uCameraPos.value.copy(state.camera.position)
+        }
+    })
+
     const uniforms = useMemo(
         () => ({
             uTime: { value: 0.0 },
@@ -82,8 +90,9 @@ export const Globe = forwardRef(({ lightRef, ...props }, ref) => {
             uDisplacementMap: { value: displacementMap },
             uNormalMapA: { value: waveNormalA },
             uNormalMapB: { value: waveNormalB },
-            uLightPos: { value: new THREE.Vector3(10, 10, 10) },
+            uLightPos: { value: lightPosition },
             uCameraPos: { value: new THREE.Vector3() },
+            uWobbleMatrix: { value: new THREE.Matrix4() },
             // big thing to watch out for here:
             // when updating the material parameters,
             // be sure to update the value property instead of the entire object, otherwise the reference will change and the shader will recompile
@@ -109,7 +118,7 @@ export const Globe = forwardRef(({ lightRef, ...props }, ref) => {
 
     return (
         <>
-            <mesh ref={ref} geometry={geometry}>
+            <mesh ref={ref} geometry={geometry} position={position}>
                 <shaderMaterial
                     useRef={materialRef}
                     vertexShader={globeVertexShader}

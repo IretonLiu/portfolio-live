@@ -15,11 +15,47 @@ export default function Home() {
     return (
         <main className="relative w-full min-h-screen flex flex-col lg:flex-row ">
             {/*<Loader />*/}
-            <CanvasContainer />
             {/* 3D Canvas Container - Takes 50% width */}
-            {/*<div className="fixed h-[50vh] w-[60vw] right-0 left-auto lg:h-screen lg:w-1/2 lg:left-auto lg:right-5 2xl:left-auto 2xl:right-50 z-11">
-            </div>*/}
+            <CanvasContainer />
             {/* Content Container - Scrollable area */}
+            <div className="relative z-100 flex-1 lg:order-1 flex flex-col h-full lg:h-screen lg:overflow-y-auto custom-scrollbar pointer-events-none">
+                <div className="w-full max-w-2xl mx-auto px-6 py-12  flex flex-col min-h-screen lg:ml-35 lg:p-20 pointer-events-auto">
+                    {/* Header */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className="mb-8"
+                    >
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3">
+                            IRETON LIU
+                        </h1>
+                        <p className="text-lg sm:text-xl font-mono text-blue-200/80 mb-6">
+                            Computer Vision | Creative Dev | Data Science
+                        </p>
+                        <SocialLinks />
+                    </motion.div>
+
+                    {/* Navigation & Content */}
+                    <div className="backdrop-blur-sm bg-[#050b14]/30 rounded-2xl border border-white/5 p-1 md:p-6 lg:border-none lg:bg-transparent lg:backdrop-blur-none lg:p-0">
+                        <Tabs
+                            tabs={tabs}
+                            activeTab={activeTab}
+                            onTabChange={setActiveTab}
+                        />
+
+                        <div className="mt-6 min-h-[300px]">
+                            <TabPanels activeTab={activeTab} />
+                        </div>
+                    </div>
+
+                    {/* Copyright / Footer in flow */}
+                    <div className="mt-12 pt-8 border-t border-white/5 text-xs text-gray-500 font-mono">
+                        © {new Date().getFullYear()} Ireton Liu. All rights
+                        reserved.
+                    </div>
+                </div>
+            </div>
             {/* Fixed 'About This' Image */}
             <motion.div
                 className="fixed top-6 right-6 lg:top-8 lg:right-8 z-50 cursor-pointer mix-blend-screen hover:scale-105 transition-transform duration-300"

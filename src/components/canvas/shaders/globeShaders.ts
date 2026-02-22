@@ -12,6 +12,7 @@ varying vec4 vShadowCoord;
 
 uniform mat4 uShadowMatrix;
 uniform sampler2D uDisplacementMap;
+uniform mat4 uWobbleMatrix;
 float remap(float x) { return log(x + 1.0); }
 
 void main() {
@@ -36,7 +37,8 @@ void main() {
   vPosition = (modelMatrix * vec4(dispPosition, 1.0)).xyz;
   vShadowCoord = uShadowMatrix * vec4(vPosition, 1.0);
 
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(dispPosition, 1.0);
+  //gl_Position = projectionMatrix * modelViewMatrix * vec4(dispPosition, 1.0);
+  gl_Position = projectionMatrix * uWobbleMatrix* viewMatrix * modelMatrix * vec4(dispPosition, 1.0);
 }
 `
 
