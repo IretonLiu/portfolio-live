@@ -109,7 +109,7 @@ export const CloudCompositor = forwardRef(
         },
         ref
     ) => {
-        const { gl, camera, size, viewport } = useThree()
+        const { gl, size, viewport } = useThree()
 
         const noiseTexture = use3DNoise(gl)
 
@@ -133,7 +133,6 @@ export const CloudCompositor = forwardRef(
                 uLightColor: { value: new THREE.Color(0xaaaaaa) },
                 uCameraNear: { value: 0.1 },
                 uCameraFar: { value: 100 },
-                uWobbleMatrix: { value: new THREE.Matrix4() },
                 uSphereCenter: { value: position },
                 // this is the radius of the outer shell of the clouds,
                 uSphereRadius: { value: lithosphereRadius + 3.0 },
@@ -142,7 +141,7 @@ export const CloudCompositor = forwardRef(
                 uInverseViewMatrix: { value: new THREE.Matrix4() },
                 uPrecomputedNoise: { value: null },
             }),
-            [cloudFragmentShader, lithosphereRadius, size, gl]
+            []
         )
 
         useEffect(() => {
@@ -151,22 +150,26 @@ export const CloudCompositor = forwardRef(
                 material.uniforms.tDiffuse.value = diffuseTexture
                 material.uniforms.tDepth.value = depthTexture
                 material.uniforms.uPrecomputedNoise.value = noiseTexture
-                material.needsUpdate = true
             }
         }, [diffuseTexture, depthTexture, noiseTexture])
 
         useFrame((state, delta) => {
             const material = ref.current?.material as THREE.ShaderMaterial
             state.camera.updateMatrixWorld() // Ensure camera matrices are up to date
+            state.camera.aspect = size.width / size.height
 
             if (material) {
-                material.uniforms.uTime.value += delta
+                material.uniforms.uTime.value += delta * 0.05
+                material.uniforms.iResolution.value.set(
+                    size.width * window.devicePixelRatio,
+                    size.height * window.devicePixelRatio
+                )
                 material.uniforms.uCameraPos.value.copy(state.camera.position)
                 material.uniforms.uInverseProjectionMatrix.value.copy(
-                    camera.projectionMatrixInverse
+                    state.camera.projectionMatrixInverse
                 )
                 material.uniforms.uInverseViewMatrix.value.copy(
-                    camera.matrixWorld
+                    state.camera.matrixWorld
                 )
             }
         })
@@ -188,3 +191,6 @@ export const CloudCompositor = forwardRef(
         )
     }
 )
+
+CloudCompositor.displayName = 'CloudCompositor'
+export default CloudCompositor

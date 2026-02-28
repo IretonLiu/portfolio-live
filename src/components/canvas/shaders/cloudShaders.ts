@@ -181,7 +181,6 @@ uniform vec3 uLightPos;
 uniform vec3 uLightColor;
 uniform mat4 uInverseProjectionMatrix;
 uniform mat4 uInverseViewMatrix;
-uniform mat4 uWobbleMatrix;
 uniform sampler3D uPrecomputedNoise;
 
 mat3 rotationY(float angle) {
@@ -193,7 +192,7 @@ mat3 rotationY(float angle) {
 vec3 cartesianToRadial(vec3 p, float R) {
 
   mat3 rot = rotationY(uTime);
-  //p = rot * p;
+  p = rot * p;
   float r = length(p);
   vec3 d = normalize(p) ;
   vec3 offset = vec3(0.0);
@@ -209,7 +208,7 @@ float noiseToCloud(vec4 noise) {
 }
 
 float lightMarch(vec3 ro, vec3 rd, float radialMask) {
-  int steps = 4;
+  int steps = 3;
   float distToEnd = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius).y;
   float distToGlobe = raySphereIntersect(ro, rd, uSphereCenter, uLithosphereRadius).y;
   
@@ -237,9 +236,9 @@ float lightMarch(vec3 ro, vec3 rd, float radialMask) {
 
 void main() {
 
-    vec2 uv = vUv;
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
     vec2 ndc = uv * 2.0 - 1.0;
-    vec4 clipPos = vec4(ndc, 0.0, 1.0);
+    vec4 clipPos = vec4(ndc, -1.0, 1.0);
     vec4 viewPos = uInverseProjectionMatrix * clipPos;
     viewPos /= viewPos.w;
     vec4 worldPos = uInverseViewMatrix * viewPos;
@@ -253,7 +252,6 @@ void main() {
     vec3 ro = uCameraPos;
 
     vec3 rd = normalize(worldPos.xyz - uCameraPos);
-    rd = (uWobbleMatrix * vec4(rd, 0.0)).xyz;
 
     float thickness = 4.0;
     vec2 tOuter = raySphereIntersect(ro, rd, uSphereCenter, uSphereRadius);
@@ -282,7 +280,7 @@ void main() {
         marchDepth = depth - max(tOuter.x, 0.0);
     }
 
-    int steps = 30;
+    int steps = 25;
     float stepSize = marchDepth / float(steps);
     vec3 lightPos = (vec4(uLightPos, 1.0) * viewMatrix).xyz;
     vec3 lightDir = lightPos - worldPos.xyz;

@@ -1,12 +1,9 @@
 export const vertexShader = `
 varying vec2 vUv;
-
-
 void main() {
-  vUv = uv;
-  gl_Position = vec4(position, 1.0); // Fullscreen quad in NDC
-}
-`
+    vUv = uv;
+    gl_Position = vec4(position.xy, 1.0, 1.0); 
+}`
 
 export const fragmentShader = `
 precision highp float;
@@ -18,12 +15,11 @@ precision highp float;
 
 varying vec2 vUv;
 
-uniform vec2 iResolution;
 uniform float uTime;
 uniform vec3 uLightPos;
+uniform vec2 iResolution;
 uniform vec3 uGlobePos;
 uniform vec3 uCameraPos;
-uniform mat4 uWobbleMatrix;
 uniform mat4 uInverseProjectionMatrix;
 uniform mat4 uInverseViewMatrix;
 
@@ -96,12 +92,10 @@ float shadowMarch(vec3 ro, vec3 rd) {
 
 void main() {
 
-    float aspectRatio = iResolution.x / iResolution.y;
 
-    vec2 uv = vUv;
-    uv.x = uv.x * aspectRatio;
+    vec2 uv = gl_FragCoord.xy / iResolution.xy;
     vec2 ndc = uv * 2.0 - 1.0;
-    vec4 clipPos = vec4(ndc, 0.0, 1.0);
+    vec4 clipPos = vec4(ndc, -1.0, 1.0);
     vec4 viewPos = uInverseProjectionMatrix * clipPos;
     viewPos /= viewPos.w;
     vec4 worldPos = uInverseViewMatrix * viewPos;
@@ -114,7 +108,6 @@ void main() {
                      0.0, sin(angle), cos(angle));
     vec3 ro = uCameraPos; // Ray origin (camera position)
     vec3 rd = normalize(worldPos.xyz - uCameraPos); // Ray direction from camera to world position
-    rd = (uWobbleMatrix * vec4(rd, 0.0)).xyz; // Apply wobble rotation
 
 
     float totalDist =0.0; // Start with a small random offset to reduce banding
@@ -146,11 +139,7 @@ void main() {
     float diffuse = max(dot(normal, lightDir), 0.0);
     //vec3 col = vec3(totalDist / MAX_DISTANCE) ;
     vec3 col = diffuse * lightColor * shadow;
-    
 
-
-
-    //gl_FragColor = vec4(vUv, 0.5 + 0.5 * sin(iResolution.x * vUv.x + iResolution.y * vUv.y), 1.0);
     gl_FragColor = vec4(col, 1.0);
 
 }

@@ -14,12 +14,11 @@ export default function Home() {
     const tabs = ['about', 'projects', 'experiences', 'publications']
     return (
         <main className="relative w-full min-h-screen flex flex-col lg:flex-row ">
-            {/*<Loader />*/}
-            {/* 3D Canvas Container - Takes 50% width */}
+            <Loader />
             <CanvasContainer />
             {/* Content Container - Scrollable area */}
-            <div className="relative z-100 flex-1 lg:order-1 flex flex-col h-full lg:h-screen lg:overflow-y-auto custom-scrollbar pointer-events-none">
-                <div className="w-full max-w-2xl mx-auto px-6 py-12  flex flex-col min-h-screen lg:ml-35 lg:p-20 pointer-events-auto">
+            <div className="relative z-40 flex-1 lg:order-1 flex flex-col h-full lg:h-screen lg:overflow-y-auto custom-scrollbar pointer-events-none">
+                <div className="w-full max-w-2xl mx-auto px-6 py-12 flex flex-col min-h-screen lg:ml-35 lg:p-20 2xl:ml-[20vw] pointer-events-auto">
                     {/* Header */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -37,7 +36,7 @@ export default function Home() {
                     </motion.div>
 
                     {/* Navigation & Content */}
-                    <div className="backdrop-blur-sm bg-[#050b14]/30 rounded-2xl border border-white/5 p-1 md:p-6 lg:border-none lg:bg-transparent lg:backdrop-blur-none lg:p-0">
+                    <div className="backdrop-blur-sm bg-[#050b14]/30 rounded-2xl border border-white/5 p-5 md:p-6 lg:border-none lg:bg-transparent lg:backdrop-blur-none lg:p-0">
                         <Tabs
                             tabs={tabs}
                             activeTab={activeTab}
@@ -75,7 +74,7 @@ export default function Home() {
                     alt="About This"
                     width={240}
                     height={240}
-                    className="w-64 h-64 md:w-64 md:h-64 opacity-80 hover:opacity-100 transition-opacity"
+                    className="w-32 h-32 md:w-64 md:h-64  2xl:mr-150 opacity-80 hover:opacity-100 transition-opacity"
                 />
             </motion.div>
         </main>

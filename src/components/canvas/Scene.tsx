@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useMemo } from 'react'
 import { useFrame, useThree, createPortal } from '@react-three/fiber'
 import {
     useFBO,
@@ -15,6 +15,7 @@ import { RaySphereIntersection } from './Utils'
 import { easing } from 'maath'
 import { InfiniteStudio } from './InfiniteStudio'
 import ParallexCamera from './ParallaxCamera'
+import { MapPointer } from './Pointer'
 
 const applySharedUniforms = (
     material: THREE.ShaderMaterial,
@@ -50,10 +51,12 @@ const applySharedUniforms = (
 const radius = 3.0
 const globePosition = new THREE.Vector3(5, 0, 0)
 const cameraStartPos = new THREE.Vector3(0, 0, 15)
-const lightPosition = new THREE.Vector3(10, 10, 10)
+const lightPosition = new THREE.Vector3(7, 7, 10)
+const pointerPosition = new THREE.Vector3(4.2, 0, 3.2)
 
 export const Scene = () => {
-    const { camera, gl, size, scene } = useThree()
+    const { camera, gl, size, scene, viewport } = useThree()
+    const dpr = gl.getPixelRatio()
     const globeRef = useRef<THREE.Mesh>(null)
     const cloudRef = useRef<THREE.Mesh>(null)
     const backgroundRef = useRef<THREE.Mesh>(null)
@@ -64,15 +67,23 @@ export const Scene = () => {
         virtualScene.current = new THREE.Scene()
     }
 
+    const physicalWidth = size.width * dpr
+    const physicalHeight = size.height * dpr
+
+    // Memoize the depth texture pointer on the heap to prevent VRAM reallocation loops
+    const fboSettings = useMemo(
+        () => ({
+            depthBuffer: true,
+            minFilter: THREE.LinearFilter,
+            magFilter: THREE.LinearFilter,
+            format: THREE.RGBAFormat,
+            type: THREE.UnsignedByteType,
+        }),
+        []
+    )
+
     // Create FBO with depth buffer
-    const fbo = useFBO(size.width, size.height, {
-        depthBuffer: true,
-        depthTexture: new THREE.DepthTexture(size.width, size.height),
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        format: THREE.RGBAFormat,
-        type: THREE.UnsignedByteType,
-    })
+    const fbo = useFBO(fboSettings)
     const rayOrigin = useRef<THREE.Vector3>(null)
     const rayDir = useRef<THREE.Vector3>(null)
     const hitPoint = useRef<THREE.Vector3>(null)
@@ -114,9 +125,10 @@ export const Scene = () => {
     useFrame((state, delta) => {
         // We ensure the camera matrix is 100% up-to-date with OrbitControls
         // before we do ANY rendering.
-        state.camera.updateMatrixWorld()
         const mouseX = state.pointer.x
         const mouseY = state.pointer.y
+
+        // update fbo size if the viewport has changed
 
         rayOrigin.current.copy(state.camera.position)
         if (isRaycastActive.current) {
@@ -170,36 +182,24 @@ export const Scene = () => {
     return (
         <>
             <Stats showPanel={0} className="fixed top-0 left-0 z-20" />
-            <ParallexCamera amplitude={0.5} damping={0.1} />
+
+            <ParallexCamera amplitude={1.0} damping={0.1} />
             <PerspectiveCamera
                 makeDefault
                 position={[0, 0, 15]}
                 near={0.1}
                 far={100}
-                fov={45}
-                target={[0, 0, 0]}
-            >
-                <directionalLight
-                    ref={lightRef}
-                    intensity={1.0} // Set to 0 if you only want the map/matrix, not the light
-                    position={[2, 2, 2]}
-                ></directionalLight>
-            </PerspectiveCamera>
+            ></PerspectiveCamera>
             {/* Pass 1: Globe rendered into virtual scene */}
             {createPortal(
                 <Globe
                     ref={globeRef}
                     position={globePosition}
                     lightPosition={lightPosition}
+                    pointerPosition={pointerPosition}
                 />,
                 virtualScene.current
             )}
-            <InfiniteStudio
-                ref={backgroundRef}
-                cameraPosition={camera.position}
-                globePosition={globePosition}
-                lightPosition={lightPosition}
-            />
             {/* Background Shader: Renders to the full canvas */}
             <CloudCompositor
                 ref={cloudRef}
@@ -208,6 +208,12 @@ export const Scene = () => {
                 diffuseTexture={fbo.texture}
                 depthTexture={fbo.depthTexture}
                 lithosphereRadius={3.0}
+            />
+            <InfiniteStudio
+                ref={backgroundRef}
+                cameraPosition={camera.position}
+                globePosition={globePosition}
+                lightPosition={lightPosition}
             />
         </>
     )

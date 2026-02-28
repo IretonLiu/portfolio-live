@@ -1,4 +1,6 @@
 export const globeVertexShader = `
+#include <common>
+#include <shadowmap_pars_vertex>
 
 flat varying vec3 vNormal;
 attribute vec4 tangent;
@@ -10,12 +12,12 @@ varying mat3 vTBN;
 varying float vDisp;
 varying vec4 vShadowCoord;
 
-uniform mat4 uShadowMatrix;
 uniform sampler2D uDisplacementMap;
-uniform mat4 uWobbleMatrix;
 float remap(float x) { return log(x + 1.0); }
 
 void main() {
+    #include <beginnormal_vertex>
+    #include <defaultnormal_vertex>
   vec3 bitangent = normalize(cross(normal, tangent.xyz) * tangent.w);
 
   // don't worry about the magic numbers :)
@@ -35,17 +37,22 @@ void main() {
 
   vUv = uv;
   vPosition = (modelMatrix * vec4(dispPosition, 1.0)).xyz;
-  vShadowCoord = uShadowMatrix * vec4(vPosition, 1.0);
-
-  //gl_Position = projectionMatrix * modelViewMatrix * vec4(dispPosition, 1.0);
-  gl_Position = projectionMatrix * uWobbleMatrix* viewMatrix * modelMatrix * vec4(dispPosition, 1.0);
+    #include <begin_vertex>
+    #include <project_vertex>
+    #include <worldpos_vertex>
+    #include <shadowmap_vertex>
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(dispPosition, 1.0);
 }
 `
 
 export const globeFragmentShader = `
+#include <common>
+#include <packing>
+#include <lights_pars_begin>
+#include <shadowmap_pars_fragment>
+#include <shadowmask_pars_fragment>
 precision highp float;
 
-#define PI 3.14159265359
 
 flat varying vec3 vNormal;
 varying vec3 vTangent;
@@ -67,7 +74,6 @@ uniform sampler2D uTexture;
 uniform sampler2D uNormalMapA;
 uniform sampler2D uNormalMapB;
 uniform sampler2D uDisplacementMap;
-uniform sampler2D uShadowMap;
 
 struct LightParameters {
   vec3 color;
@@ -150,21 +156,6 @@ vec3 PBRLighting(vec3 N, vec3 V, vec3 L, vec3 albedo,
   return color;
 }
 
-float getSelfOcclusion() {
-    // Perspective divide and map to [0, 1] range
-    vec3 shadowCoord = vShadowCoord.xyz / vShadowCoord.w;
-    shadowCoord = shadowCoord * 0.5 + 0.5;
-
-    // The depth of the closest surface to the light
-    float closestDepth = texture2D(uShadowMap, shadowCoord.xy).r;
-    
-    // The depth of the current fragment
-    float currentDepth = shadowCoord.z;
-
-    // Bias to prevent "shadow acne" (self-shadowing artifacts)
-    float bias = 0.005; 
-    return (currentDepth - bias > closestDepth) ? 0.0 : 1.0;
-}
 
 vec3 getNormalFromMap(sampler2D uDisplacementMap, vec2 uv, float normalStrength, vec2 texSize) {
     vec2 pixelSize = 1.0 / texSize; 
@@ -218,6 +209,7 @@ void main() {
     displacedNormal = normalize(vTBN * displacedNormal);
 
 
+
     vec3 earthAlbedo = texture2D(uTexture, vUv).rgb;
     vec3 whiteAlbedo = vec3(1.0);
 
@@ -239,10 +231,14 @@ void main() {
     }
     whiteColor = PBRLighting(displacedNormal, V, L, whiteAlbedo, materialParams, lightParams);
 
+    float shadowPower = getShadowMask();
+    earthColor *= shadowPower;
+    whiteColor *= shadowPower;
+
     vec3 color = whiteColor;
 
-    earthColor += earthAlbedo * vec3(0.7); // ambient term
-    color += whiteAlbedo * vec3(0.7); // ambient term
+    earthColor += earthAlbedo * vec3(0.8); // ambient term
+    color += whiteAlbedo * vec3(0.8); // ambient term
 
     if (uMouseHit > 0.5) {
         vec3 warpedPosition = vec3(vPosition.x, vPosition.y, vPosition.z + sin(uTime * 80.0) * 0.5); // Add a pulsating effect
@@ -252,6 +248,8 @@ void main() {
         float mask = smoothstep(radius + edgeSoftness, radius - edgeSoftness, dist);
         color = mix(color, earthColor, mask);
     }
+    vec3 baseColor = vec3(0.1, 0.6, 0.9); // The sphere's color
+
     gl_FragColor = vec4(color, 1.0);
 
 }

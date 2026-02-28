@@ -13,9 +13,14 @@ export const CanvasContainer = () => {
 
     return (
         <>
-            {/* 2. THE RENDER LAYER: Full screen behind the UI */}
-            <div className="fixed inset-0 z-20 flex flex-col items-center justify-center bg-transparent text-slate-900 pointer-events-auto">
-                <Canvas dpr={[1, 2]}>
+            <div className="fixed min-w-0 inset-0 z-20 items-center justify-center bg-transparent text-slate-900 pointer-events-auto">
+                <Canvas
+                    shadows={{ type: THREE.PCFSoftShadowMap }}
+                    gl={{
+                        antialias: true,
+                        autoClear: false,
+                    }}
+                >
                     {/* The Sphere View: Only renders inside the 'uiRef' bounds */}
                     <Scene />
 

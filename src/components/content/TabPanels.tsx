@@ -73,10 +73,10 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                             </li>
                             <li>
                                 <strong className="text-white font-mono text-sm font-normal tracking-wide uppercase">
-                                    3D Engines
+                                    WebGL
                                 </strong>{' '}
                                 <span className="block text-sm mt-1">
-                                    React Three Fibre; Unity; Unreal Engine
+                                    Threejs; React Three Fiber;
                                 </span>
                             </li>
                             <li>
@@ -106,9 +106,6 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                                 sub={project.sub}
                                 desc={project.desc}
                                 delay={index * 0.1}
-                                onClick={() =>
-                                    window.open(project.onclick, '_blank')
-                                }
                             />
                         ))}
                     </motion.div>
@@ -127,13 +124,11 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                                 title={exp.title}
                                 sub={exp.sub}
                                 desc={exp.desc}
-                                delay={index * 0.1}
-                                onClick={() => {
-                                    // Placeholder for 3D globe interaction
-                                    console.log(
-                                        `Move camera to: ${exp.location}`
-                                    )
+                                globeRotation={{
+                                    theta: exp.location[0],
+                                    phi: exp.location[1],
                                 }}
+                                delay={index * 0.1}
                             />
                         ))}
                     </motion.div>
