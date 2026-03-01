@@ -7,10 +7,11 @@ import {
     fragmentShader as cloudFragmentShader,
     vertexShader as cloudVertexShader,
 } from './shaders/cloudShaders'
+import { Texture, Group } from 'three'
 
 extend({ ShaderPass })
 
-function use3DNoise(gl) {
+function use3DNoise(gl: THREE.WebGLRenderer) {
     return useMemo(() => {
         if (!noiseFragmentShader) return null
 
@@ -96,100 +97,118 @@ function use3DNoise(gl) {
         return tex3D
     }, [gl, noiseFragmentShader])
 }
+interface CloudCompositorProps {
+    diffuseTexture: Texture
+    depthTexture: THREE.DepthTexture | null
+    lithosphereRadius?: number
+    position?: THREE.Vector3
+    lightPosition?: THREE.Vector3
+    sharedUniforms?: {
+        uMousePoint: { value: THREE.Vector3 }
+        uMouseHit: { value: number }
+        uBlendRadius: { value: number }
+    }
+}
+export const CloudCompositor = ({
+    diffuseTexture,
+    depthTexture,
+    lithosphereRadius = 3.0,
+    position,
+    lightPosition,
+    sharedUniforms,
+}: CloudCompositorProps) => {
+    const { gl, size, viewport } = useThree()
+    const ref = useRef<THREE.Mesh>(null)
+    const materialRef = useRef<THREE.ShaderMaterial>(null)
 
-export const CloudCompositor = forwardRef(
-    (
-        {
-            diffuseTexture,
-            depthTexture,
-            lithosphereRadius = 3.0,
-            position,
-            lightPosition,
-        },
-        ref
-    ) => {
-        const { gl, size, viewport } = useThree()
+    const noiseTexture = use3DNoise(gl)
 
-        const noiseTexture = use3DNoise(gl)
-
-        // We use useMemo so we don't recreate the material on every render
-        const uniforms = useMemo(
-            () => ({
-                tDiffuse: { value: null },
-                tDepth: { value: null },
-                uTime: { value: 0.0 },
-                uMousePoint: { value: new THREE.Vector3(999, 999, 999) },
-                uMouseHit: { value: 0.0 },
-                uBlendRadius: { value: 0.0 },
-                iResolution: {
-                    value: new THREE.Vector2(
-                        size.width * window.devicePixelRatio,
-                        size.height * window.devicePixelRatio
-                    ),
-                },
-                uCameraPos: { value: new THREE.Vector3() },
-                uLightPos: { value: lightPosition },
-                uLightColor: { value: new THREE.Color(0xaaaaaa) },
-                uCameraNear: { value: 0.1 },
-                uCameraFar: { value: 100 },
-                uSphereCenter: { value: position },
-                // this is the radius of the outer shell of the clouds,
-                uSphereRadius: { value: lithosphereRadius + 3.0 },
-                uLithosphereRadius: { value: lithosphereRadius },
-                uInverseProjectionMatrix: { value: new THREE.Matrix4() },
-                uInverseViewMatrix: { value: new THREE.Matrix4() },
-                uPrecomputedNoise: { value: null },
-            }),
-            []
-        )
-
-        useEffect(() => {
-            const material = ref.current?.material as THREE.ShaderMaterial
-            if (material) {
-                material.uniforms.tDiffuse.value = diffuseTexture
-                material.uniforms.tDepth.value = depthTexture
-                material.uniforms.uPrecomputedNoise.value = noiseTexture
-            }
-        }, [diffuseTexture, depthTexture, noiseTexture])
-
-        useFrame((state, delta) => {
-            const material = ref.current?.material as THREE.ShaderMaterial
-            state.camera.updateMatrixWorld() // Ensure camera matrices are up to date
-            state.camera.aspect = size.width / size.height
-
-            if (material) {
-                material.uniforms.uTime.value += delta * 0.05
-                material.uniforms.iResolution.value.set(
+    // We use useMemo so we don't recreate the material on every render
+    const uniforms = useMemo(
+        () => ({
+            tDiffuse: { value: null },
+            tDepth: { value: null },
+            uTime: { value: 0.0 },
+            uMousePoint: { value: new THREE.Vector3(999, 999, 999) },
+            uMouseHit: { value: 0.0 },
+            uBlendRadius: { value: 0.0 },
+            iResolution: {
+                value: new THREE.Vector2(
                     size.width * window.devicePixelRatio,
                     size.height * window.devicePixelRatio
-                )
-                material.uniforms.uCameraPos.value.copy(state.camera.position)
-                material.uniforms.uInverseProjectionMatrix.value.copy(
-                    state.camera.projectionMatrixInverse
-                )
-                material.uniforms.uInverseViewMatrix.value.copy(
-                    state.camera.matrixWorld
-                )
-            }
-        })
+                ),
+            },
+            uCameraPos: { value: new THREE.Vector3() },
+            uLightPos: { value: lightPosition },
+            uLightColor: { value: new THREE.Color(0xaaaaaa) },
+            uCameraNear: { value: 0.1 },
+            uCameraFar: { value: 100 },
+            uSphereCenter: { value: position },
+            // this is the radius of the outer shell of the clouds,
+            uSphereRadius: { value: lithosphereRadius + 3.0 },
+            uLithosphereRadius: { value: lithosphereRadius },
+            uInverseProjectionMatrix: { value: new THREE.Matrix4() },
+            uInverseViewMatrix: { value: new THREE.Matrix4() },
+            uPrecomputedNoise: { value: null },
+        }),
+        []
+    )
 
-        return (
-            <>
-                <mesh ref={ref} position={[0, 0, 0]}>
-                    <planeGeometry args={[2, 2]} />
-                    <shaderMaterial
-                        vertexShader={cloudVertexShader}
-                        fragmentShader={cloudFragmentShader}
-                        uniforms={uniforms}
-                        depthWrite={false}
-                        depthTest={false}
-                        transparent={true}
-                    />
-                </mesh>
-            </>
-        )
-    }
-)
+    useEffect(() => {
+        const material = materialRef?.current
+        if (material) {
+            material.uniforms.tDiffuse.value = diffuseTexture
+            material.uniforms.tDepth.value = depthTexture
+            material.uniforms.uPrecomputedNoise.value = noiseTexture
+        }
+    }, [diffuseTexture, depthTexture, noiseTexture])
+
+    useFrame((state, delta) => {
+        const material = materialRef?.current
+        state.camera.updateMatrixWorld() // Ensure camera matrices are up to date
+
+        if (material) {
+            if (sharedUniforms) {
+                material.uniforms.uMousePoint.value.copy(
+                    sharedUniforms.uMousePoint.value
+                )
+                material.uniforms.uMouseHit.value =
+                    sharedUniforms.uMouseHit.value
+                material.uniforms.uBlendRadius.value =
+                    sharedUniforms.uBlendRadius.value
+            }
+            material.uniforms.uTime.value += delta * 0.05
+            material.uniforms.iResolution.value.set(
+                size.width * window.devicePixelRatio,
+                size.height * window.devicePixelRatio
+            )
+            material.uniforms.uCameraPos.value.copy(state.camera.position)
+            material.uniforms.uInverseProjectionMatrix.value.copy(
+                state.camera.projectionMatrixInverse
+            )
+            material.uniforms.uInverseViewMatrix.value.copy(
+                state.camera.matrixWorld
+            )
+        }
+    })
+
+    return (
+        <>
+            <mesh ref={ref} position={[0, 0, 0]}>
+                <planeGeometry args={[2, 2]} />
+                <shaderMaterial
+                    ref={materialRef}
+                    vertexShader={cloudVertexShader}
+                    fragmentShader={cloudFragmentShader}
+                    uniforms={uniforms}
+                    depthWrite={false}
+                    depthTest={false}
+                    transparent={true}
+                />
+            </mesh>
+        </>
+    )
+}
 
 CloudCompositor.displayName = 'CloudCompositor'
 export default CloudCompositor

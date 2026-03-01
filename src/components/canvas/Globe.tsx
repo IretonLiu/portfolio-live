@@ -21,7 +21,21 @@ const LIGHT_PARAMS = {
     intensity: 1.0,
 }
 
-export const Globe = forwardRef(({ position, lightPosition }, ref) => {
+interface GlobeProps {
+    position: THREE.Vector3
+    lightPosition: THREE.Vector3
+    sharedUniforms?: {
+        uMouseHit: { value: number }
+        uMousePoint: { value: THREE.Vector3 }
+        uBlendRadius: { value: number }
+    }
+}
+export const Globe = ({
+    position,
+    lightPosition,
+    sharedUniforms,
+}: GlobeProps) => {
+    const ref = useRef<THREE.Mesh>(null)
     const materialRef = useRef<THREE.ShaderMaterial>(null)
 
     // leva for pbr parameters
@@ -36,7 +50,7 @@ export const Globe = forwardRef(({ position, lightPosition }, ref) => {
     waveNormalA.wrapS = waveNormalA.wrapT = THREE.RepeatWrapping
     waveNormalB.wrapS = waveNormalB.wrapT = THREE.RepeatWrapping
     const geometry = useMemo(() => {
-        let geom = new THREE.SphereGeometry(3, 128, 128)
+        const geom = new THREE.SphereGeometry(3, 128, 128)
         geom.rotateY(-Math.PI)
         geom.computeTangents()
         geom.computeVertexNormals()
@@ -46,9 +60,18 @@ export const Globe = forwardRef(({ position, lightPosition }, ref) => {
     const targetEuler = useMemo(() => new THREE.Euler(), [])
 
     useFrame((state, delta) => {
-        const material = ref.current?.material as THREE.ShaderMaterial
+        const material = materialRef?.current
         state.camera.updateMatrixWorld() // Ensure camera matrices are up to date
         if (material) {
+            if (sharedUniforms) {
+                material.uniforms.uMouseHit.value =
+                    sharedUniforms.uMouseHit.value
+                material.uniforms.uMousePoint.value.copy(
+                    sharedUniforms.uMousePoint.value
+                )
+                material.uniforms.uBlendRadius.value =
+                    sharedUniforms.uBlendRadius.value
+            }
             material.uniforms.uTime.value += delta * 0.01
             material.uniforms.uCameraPos.value.copy(state.camera.position)
         }
@@ -116,7 +139,7 @@ export const Globe = forwardRef(({ position, lightPosition }, ref) => {
             </mesh>
         </>
     )
-})
+}
 
 Globe.displayName = 'Globe'
 export default Globe

@@ -1,3 +1,4 @@
+import * as THREE from 'three'
 export function RaySphereIntersection(
     rayOrigin: THREE.Vector3,
     rayDirection: THREE.Vector3,

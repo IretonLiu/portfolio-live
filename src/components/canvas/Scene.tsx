@@ -18,25 +18,6 @@ import ParallexCamera from './ParallaxCamera'
 import { MapPointer } from './Pointer'
 import { usePointerAnimationStore } from '../../store/useStore'
 
-const applySharedUniforms = (
-    material: THREE.ShaderMaterial,
-    delta: number,
-    tHit: number,
-    hitPoint: THREE.Vector3
-) => {
-    material.uniforms.uMousePoint.value.copy(hitPoint)
-    material.uniforms.uMouseHit.value = tHit > 0 ? 1.0 : 0.0
-
-    // Dampen the blend radius
-    easing.damp(
-        material.uniforms.uBlendRadius,
-        'value',
-        3.0, // Target
-        0.25, // Smooth time
-        delta
-    )
-}
-
 const radius = 3.0
 const globePosition = new THREE.Vector3(5, 0, 0)
 const cameraStartPos = new THREE.Vector3(0, 0, 15)
@@ -46,10 +27,6 @@ const outofviewPointerPosition = new THREE.Vector3(999, 999, 999)
 
 export const Scene = () => {
     const { camera, gl, size, scene, viewport } = useThree()
-    const dpr = gl.getPixelRatio()
-    const globeRef = useRef<THREE.Mesh>(null)
-    const cloudRef = useRef<THREE.Mesh>(null)
-    const backgroundRef = useRef<THREE.Mesh>(null)
     const lightRef = useRef<THREE.DirectionalLight>(null)
     const virtualScene = useRef<THREE.Scene>(null)
 
@@ -60,9 +37,6 @@ export const Scene = () => {
     if (virtualScene.current === null) {
         virtualScene.current = new THREE.Scene()
     }
-
-    const physicalWidth = size.width * dpr
-    const physicalHeight = size.height * dpr
 
     const fboSettings = useMemo(
         () => ({
@@ -77,30 +51,17 @@ export const Scene = () => {
 
     // Create FBO with depth buffer
     const fbo = useFBO(fboSettings)
-    const rayOrigin = useRef<THREE.Vector3>(null)
-    const rayDir = useRef<THREE.Vector3>(null)
-    const hitPoint = useRef<THREE.Vector3>(null)
-    const sharedUniform = useRef<{
-        uMousePoint: { value: THREE.Vector3 }
-        uMouseHit: { value: number }
-        uBlendRadius: { value: number }
-        uTime: { value: number }
-        uLightDir: { value: THREE.Vector3 }
-    }>(null)
-
-    // Initialised all the null refs
-    if (rayOrigin.current === null) rayOrigin.current = new THREE.Vector3()
-    if (rayDir.current === null) rayDir.current = new THREE.Vector3()
-    if (hitPoint.current === null) hitPoint.current = new THREE.Vector3()
-    if (sharedUniform.current === null) {
-        sharedUniform.current = {
+    const rayOrigin = useMemo(() => new THREE.Vector3(), [])
+    const rayDir = useMemo(() => new THREE.Vector3(), [])
+    const hitPoint = useMemo(() => new THREE.Vector3(), [])
+    const sharedUniforms = useMemo(() => {
+        return {
             uMousePoint: { value: outofviewPointerPosition.clone() },
             uMouseHit: { value: 0.0 },
-            uBlendRadius: { value: 0 },
-            uTime: { value: 0 },
-            uLightDir: { value: new THREE.Vector3() },
+            uBlendRadius: { value: 0.0 },
         }
-    }
+    }, [])
+
     const isRaycastActive = useRef(false)
     useEffect(() => {
         const handleMove = () => {
@@ -128,79 +89,45 @@ export const Scene = () => {
 
         // update fbo size if the viewport has changed
 
-        rayOrigin.current.copy(state.camera.position)
+        rayOrigin.copy(state.camera.position)
         if (isRaycastActive.current) {
-            rayDir.current
+            rayDir
                 .set(mouseX, mouseY, 0.0)
                 .unproject(state.camera)
-                .sub(rayOrigin.current)
+                .sub(rayOrigin)
                 .normalize()
         } else {
-            rayDir.current
+            rayDir
                 .set(999, 999, -1)
                 .transformDirection(state.camera.matrixWorld)
         }
 
         const tHit = RaySphereIntersection(
-            rayOrigin.current,
-            rayDir.current,
+            rayOrigin,
+            rayDir,
             globePosition,
             radius
         )
 
-        if (tHit > 0) {
-            hitPoint.current
-                .copy(rayOrigin.current)
-                .addScaledVector(rayDir.current, tHit)
-            if (globeRef.current) {
-                applySharedUniforms(
-                    globeRef.current.material as THREE.ShaderMaterial,
-                    delta,
-                    tHit,
-                    hitPoint.current
-                )
-            }
-            if (cloudRef.current) {
-                const cloudMaterial = cloudRef.current
-                    .material as THREE.ShaderMaterial
-                applySharedUniforms(
-                    cloudMaterial,
-                    delta,
-                    tHit,
-                    hitPoint.current
-                )
-            }
+        if (tHit > 0 && hitPoint && rayOrigin && rayDir) {
+            hitPoint.copy(rayOrigin).addScaledVector(rayDir, tHit)
+            sharedUniforms.uMousePoint.value.copy(hitPoint)
+            sharedUniforms.uMouseHit.value = 1.0
+            easing.damp(sharedUniforms.uBlendRadius, 'value', 3.0, 0.25, delta)
         } else if (pointerShowing.current) {
-            applySharedUniforms(
-                globeRef.current.material as THREE.ShaderMaterial,
-                delta,
-                1.0,
-                pointerPosition
-            )
-            applySharedUniforms(
-                cloudRef.current.material as THREE.ShaderMaterial,
-                delta,
-                1.0,
-                pointerPosition
-            )
+            sharedUniforms.uMousePoint.value.copy(pointerPosition)
+            sharedUniforms.uMouseHit.value = 1.0
+            easing.damp(sharedUniforms.uBlendRadius, 'value', 3.0, 0.25, delta)
         } else {
-            applySharedUniforms(
-                globeRef.current.material as THREE.ShaderMaterial,
-                delta,
-                -1.0,
-                outofviewPointerPosition
-            )
-            applySharedUniforms(
-                cloudRef.current.material as THREE.ShaderMaterial,
-                delta,
-                -1.0,
-                outofviewPointerPosition
-            )
+            sharedUniforms.uMousePoint.value.copy(outofviewPointerPosition)
+            sharedUniforms.uMouseHit.value = -1.0
+            easing.damp(sharedUniforms.uBlendRadius, 'value', 3.0, 0.25, delta)
         }
 
         gl.setRenderTarget(fbo)
         gl.clear()
-        gl.render(virtualScene.current, camera)
+
+        if (virtualScene.current) gl.render(virtualScene.current, camera)
 
         gl.setRenderTarget(null)
         gl.render(scene, camera)
@@ -229,25 +156,23 @@ export const Scene = () => {
                     />
                     <MapPointer position={pointerPosition} />,
                     <Globe
-                        ref={globeRef}
                         position={globePosition}
                         lightPosition={lightPosition}
-                        pointerPosition={pointerPosition}
+                        sharedUniforms={sharedUniforms}
                     />
                 </>,
                 virtualScene.current
             )}
             {/* Background Shader: Renders to the full canvas */}
             <CloudCompositor
-                ref={cloudRef}
                 position={globePosition}
                 lightPosition={lightPosition}
                 diffuseTexture={fbo.texture}
                 depthTexture={fbo.depthTexture}
                 lithosphereRadius={3.0}
+                sharedUniforms={sharedUniforms}
             />
             <InfiniteStudio
-                ref={backgroundRef}
                 cameraPosition={camera.position}
                 globePosition={globePosition}
                 lightPosition={lightPosition}

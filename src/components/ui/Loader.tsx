@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import TerminalDots from './TerminalDots'
 
-export default function Loader({ onLoaded }) {
+export default function Loader() {
     // Destructure 'active' to know when loading is truly finished
     const { active, progress } = useProgress()
     const [show, setShow] = useState(true)
 
     useEffect(() => {
-        let timer
+        let timer: ReturnType<typeof setTimeout>
 
         // Only start the hide timer if /oading is inactive AND progress is full
         // This prevents premature hiding if progress hits 100 but assets are still processing

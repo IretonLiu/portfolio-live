@@ -9,16 +9,16 @@ import React, { useMemo, useRef, useEffect } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
 import * as THREE from 'three'
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js'
-import { easing } from 'maath'
 import { usePointerAnimationStore } from '../../store/useStore'
 
-export const MapPointer = ({ position }) => {
+export const MapPointer = ({ position }: { position: THREE.Vector3 }) => {
     const meshRef = useRef<THREE.Mesh>(null)
     // load the model and texture
+    const obj = useLoader(OBJLoader, '/assets/models/map_pointer.obj')
     const geometry = useMemo(() => {
-        const obj = useLoader(OBJLoader, '/assets/models/map_pointer.obj')
-        return obj.children[0].geometry as THREE.BufferGeometry
-    }, [])
+        const mesh = obj.children[0] as THREE.Mesh
+        return mesh.geometry
+    }, [obj])
 
     const material = useMemo(() => {
         return new THREE.MeshPhysicalMaterial({
@@ -50,7 +50,7 @@ export const MapPointer = ({ position }) => {
         }
     }, [pointerAnimationCounter])
 
-    const easeOutBounce = (t) => {
+    const easeOutBounce = (t: number) => {
         const n1 = 7.5625
         const d1 = 2.75
 
