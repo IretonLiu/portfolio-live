@@ -135,7 +135,7 @@ export const Scene = () => {
 
     return (
         <>
-            <Stats showPanel={0} className="fixed top-0 left-0 z-20" />
+            {/*<Stats showPanel={0} className="fixed top-0 left-0 z-20" />*/}
             <ParallexCamera amplitude={1.0} damping={0.1} />
             <PerspectiveCamera
                 makeDefault
