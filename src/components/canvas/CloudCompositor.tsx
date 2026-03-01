@@ -8,7 +8,6 @@ import {
     vertexShader as cloudVertexShader,
 } from './shaders/cloudShaders'
 
-// Register ShaderPass as a native JSX element <shaderPass />
 extend({ ShaderPass })
 
 function use3DNoise(gl) {

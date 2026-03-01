@@ -21,23 +21,10 @@ export const CanvasContainer = () => {
                         autoClear: false,
                     }}
                 >
-                    {/* The Sphere View: Only renders inside the 'uiRef' bounds */}
                     <Scene />
-
                     {/* Precompute handles the heavy lifting of syncing the view to the div */}
                 </Canvas>
             </div>
         </>
     )
-
-    // return (
-    //     <div className="w-full h-full">
-    //         <Canvas
-    //             shadows={{ type: THREE.PCFSoftShadowMap }}
-    //             gl={{ autoRender: false }}
-    //         >
-    //             <Scene />
-    //         </Canvas>
-    //     </div>
-    // )
 }

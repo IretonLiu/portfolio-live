@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import TerminalDots from './TerminalDots'
 
-export default function Loader() {
+export default function Loader({ onLoaded }) {
     // Destructure 'active' to know when loading is truly finished
     const { active, progress } = useProgress()
     const [show, setShow] = useState(true)
@@ -44,8 +44,8 @@ export default function Loader() {
                     <div className="w-full flex flex-col items-center gap-4">
                         {/* Letter spacing is important for the aesthetic, adjust as needed */}
                         <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.5 }}
                             className="text-sm font-mono tracking-[0.2em] text-black z-998"
@@ -69,25 +69,34 @@ export default function Loader() {
                             />
                         </motion.div>
 
-                        <div className="flex justify-between w-full text-[10px] font-mono text-black px-2 z-998">
+                        <div className="relative flex justify-between items-center w-full text-[10px] font-mono text-black px-2 z-[998]">
                             <motion.span
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.2, delay: 0.0 }}
                             >
                                 {active ? 'LOADING ASSETS' : 'FINALIZING'}
                                 <TerminalDots />
                             </motion.span>
+
+                            {/* Centered absolutely, visible only on small screens (<640px) in portrait mode */}
                             <motion.span
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2, delay: 0.0 }}
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden max-sm:portrait:block whitespace-nowrap"
+                            >
+                                (view in landscape for best experience)
+                            </motion.span>
+
+                            <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.2, delay: 0.0 }}
                             >
                                 {Math.round(progress)}%
                             </motion.span>
-                            {/* Math.round prevents flickering decimals */}
                         </div>
                         <motion.div
                             className="absolute top-0 left-0 w-full h-1/2 bg-white z-997"

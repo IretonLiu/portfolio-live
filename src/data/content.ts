@@ -99,7 +99,7 @@ export const publications = [
     {
         id: 'sterkfontein',
         title: 'A 3D Reconstruction of the Sterkfontein Caves using Novel View Synthesis',
-        sub: 'In progress (aiming CVPR 2026)',
+        sub: 'In progress (aiming ECCV 2026)',
         desc: 'Ongoing collaboration with Brown University, developing a novel view synthesis framework for high-fidelity 3D reconstruction of the Sterkfontein Caves.',
     },
     {

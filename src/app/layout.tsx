@@ -1,12 +1,18 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import { Barlow_Condensed, JetBrains_Mono, Manrope } from 'next/font/google'
 import './globals.css'
 
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+    title: 'Ireton Liu - Computer Vision Researcher & Creative Developer',
+    icons: {
+        icon: 'coffee-beans.png',
+    },
+}
 const barlowCondensed = Barlow_Condensed({
     subsets: ['latin'],
     weight: ['400', '600', '800'],
-    variable: '--font-barlow', // We define a CSS variable here
+    variable: '--font-barlow',
 })
 
 const jetBrainsMono = JetBrains_Mono({
@@ -28,7 +34,6 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-            {/* 2. Add the variables to the body so Tailwind can see them */}
             <body
                 className={`${barlowCondensed.variable} ${jetBrainsMono.variable} ${manrope.variable} font-sans`}
             >

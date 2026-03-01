@@ -22,15 +22,14 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                     >
                         <h5 className="text-2xl font-light text-white tracking-tight"></h5>
                         <p>
-                            As a Computer Vision researcher by training and Data
-                            Scientist by profession, with a strong appreciation
-                            for creative coding and 3D graphics, I bring a
-                            unique blend of technical expertise and artistic
-                            sensibility to my work. I leverage this unique
-                            technical background to build interactive
-                            experiences that handle complex geometry and
-                            high-fidelity visuals, without compromising on
-                            performance.
+                            I'm a Data Scientist by profession and Computer
+                            Vision researcher by training, and obsessed with
+                            creative coding and 3D graphics in my spare time:) I
+                            bring a unique blend of technical expertise
+                            creativity to my work. This unique technical
+                            background help me build complex interactive
+                            experiences and robust pipelines without
+                            compromising on performance.
                         </p>
                         <ul className="list-disc pl-5 space-y-2 marker:text-accent">
                             <li>

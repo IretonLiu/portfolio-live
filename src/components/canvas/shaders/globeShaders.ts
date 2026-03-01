@@ -205,7 +205,7 @@ void main() {
 
 
     float depth = texture2D(uDisplacementMap, vUv).r;
-    vec3 displacedNormal = getNormalFromMap(uDisplacementMap, vUv, 50.0, vec2(2048.0)); // Assuming 1024x1024 texture
+    vec3 displacedNormal = getNormalFromMap(uDisplacementMap, vUv, 50.0, vec2(2048.0)); 
     displacedNormal = normalize(vTBN * displacedNormal);
 
 

@@ -8,16 +8,16 @@ interface GlobeRotationState {
     setTargetGlobeRotation: (theta: number, phi: number) => void
 }
 
-interface PointerAnimationState {
-    pointerAnimationCounter: number
-    increasePointerAnimationCounter: () => void
-}
-
 export const useGlobeRotationStore = create<GlobeRotationState>((set) => ({
     targetGlobeRotation: { theta: 0, phi: 0 },
     setTargetGlobeRotation: (theta, phi) =>
         set({ targetGlobeRotation: { theta, phi } }),
 }))
+
+interface PointerAnimationState {
+    pointerAnimationCounter: number
+    increasePointerAnimationCounter: () => void
+}
 
 export const usePointerAnimationStore = create<PointerAnimationState>(
     (set) => ({

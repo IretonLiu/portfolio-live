@@ -64,7 +64,6 @@ export const Scene = () => {
     const physicalWidth = size.width * dpr
     const physicalHeight = size.height * dpr
 
-    // Memoize the depth texture pointer on the heap to prevent VRAM reallocation loops
     const fboSettings = useMemo(
         () => ({
             depthBuffer: true,
@@ -106,13 +105,11 @@ export const Scene = () => {
     useEffect(() => {
         const handleMove = () => {
             isRaycastActive.current = true
-            // We only need to know this once, so we clean up immediately
             window.removeEventListener('pointermove', handleMove)
         }
 
         window.addEventListener('pointermove', handleMove)
 
-        // Cleanup in case component unmounts before moving
         return () => window.removeEventListener('pointermove', handleMove)
     }, [])
 
@@ -180,6 +177,12 @@ export const Scene = () => {
                 1.0,
                 pointerPosition
             )
+            applySharedUniforms(
+                cloudRef.current.material as THREE.ShaderMaterial,
+                delta,
+                1.0,
+                pointerPosition
+            )
         } else {
             applySharedUniforms(
                 globeRef.current.material as THREE.ShaderMaterial,
@@ -188,14 +191,13 @@ export const Scene = () => {
                 outofviewPointerPosition
             )
             applySharedUniforms(
-                globeRef.current.material as THREE.ShaderMaterial,
+                cloudRef.current.material as THREE.ShaderMaterial,
                 delta,
                 -1.0,
                 outofviewPointerPosition
             )
         }
 
-        // Do the same for clouds
         gl.setRenderTarget(fbo)
         gl.clear()
         gl.render(virtualScene.current, camera)

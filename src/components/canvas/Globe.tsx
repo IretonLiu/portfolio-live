@@ -36,12 +36,10 @@ export const Globe = forwardRef(({ position, lightPosition }, ref) => {
     waveNormalA.wrapS = waveNormalA.wrapT = THREE.RepeatWrapping
     waveNormalB.wrapS = waveNormalB.wrapT = THREE.RepeatWrapping
     const geometry = useMemo(() => {
-        //let geom = new THREE.IcosahedronGeometry(3, 16)
         let geom = new THREE.SphereGeometry(3, 128, 128)
-        geom.rotateY(-Math.PI) // Rotate to align with texture
-        geom.computeTangents() // Compute tangents for normal mapping if needed
-        geom.computeVertexNormals() // Ensure normals are computed for lighting
-        // log position
+        geom.rotateY(-Math.PI)
+        geom.computeTangents()
+        geom.computeVertexNormals()
         return geom
     }, [])
 
@@ -51,7 +49,7 @@ export const Globe = forwardRef(({ position, lightPosition }, ref) => {
         const material = ref.current?.material as THREE.ShaderMaterial
         state.camera.updateMatrixWorld() // Ensure camera matrices are up to date
         if (material) {
-            material.uniforms.uTime.value += delta * 0.01 // Slow down time for a more subtle effect
+            material.uniforms.uTime.value += delta * 0.01
             material.uniforms.uCameraPos.value.copy(state.camera.position)
         }
         const target = useGlobeRotationStore.getState().targetGlobeRotation
@@ -78,7 +76,7 @@ export const Globe = forwardRef(({ position, lightPosition }, ref) => {
                     emissive: new THREE.Color(PBR_PARAMS.emissive),
                     metallic: PBR_PARAMS.metallic,
                     roughness: PBR_PARAMS.roughness,
-                    F0: new THREE.Color(0.04, 0.04, 0.04), // Default for non-metals
+                    F0: new THREE.Color(0.04, 0.04, 0.04),
                 },
             },
             lightParams: {
