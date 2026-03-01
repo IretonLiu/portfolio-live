@@ -79,7 +79,7 @@ export default function Home() {
                     )
                 }
             >
-                <Image
+                <img
                     src="/assets/images/inverted.png"
                     alt="About This"
                     width={240}
