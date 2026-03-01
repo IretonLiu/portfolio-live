@@ -29,10 +29,3 @@ The project focuses on efficient GPU-side computation:
 
 State management using zustand.
 
-## Getting Started
-
-```bash
-npm install
-npm run dev
-```
-
