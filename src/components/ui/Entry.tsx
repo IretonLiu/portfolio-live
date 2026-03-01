@@ -9,7 +9,6 @@ interface EntryProps {
     title: string
     sub: string
     desc: string
-    showPointer: boolean
     globeRotation?: { theta: number; phi: number }
     delay?: number
 }
@@ -26,9 +25,6 @@ export const Entry: React.FC<EntryProps> = ({
     )
     const increasePointerAnimationCounter = usePointerAnimationStore(
         (state) => state.increasePointerAnimationCounter
-    )
-    const pointerAnimationCounter = usePointerAnimationStore(
-        (state) => state.pointerAnimationCounter
     )
     return (
         <motion.div

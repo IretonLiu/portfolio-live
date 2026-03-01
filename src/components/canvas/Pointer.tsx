@@ -23,7 +23,7 @@ export const MapPointer = ({ position }) => {
     const material = useMemo(() => {
         return new THREE.MeshPhysicalMaterial({
             color: 0xff0000,
-            transparent: true,
+            transparent: false,
             opacity: 1.0,
         })
     }, [])
@@ -41,16 +41,15 @@ export const MapPointer = ({ position }) => {
 
     useEffect(() => {
         if (pointerAnimationCounter > 0) {
-            pointerAnimationState.startTime = performance.now()
             pointerAnimationState.progress = 0
             const mesh = meshRef.current
             if (mesh) {
-                mesh.position.set(position[0], position[1] + 1.0, position[2])
+                mesh.position.set(position.x, position.y + 1.0, position.z)
                 mesh.visible = true
             }
         }
     }, [pointerAnimationCounter])
-    // Input (t): 0 to 1 | Output: 0 to 1
+
     const easeOutBounce = (t) => {
         const n1 = 7.5625
         const d1 = 2.75
@@ -79,8 +78,8 @@ export const MapPointer = ({ position }) => {
             const easedProgress = easeOutBounce(pointerAnimationState.progress)
 
             meshRef.current.position.y = THREE.MathUtils.lerp(
-                position[1] + 1.0,
-                position[1],
+                position.y + 1.0,
+                position.y,
                 easedProgress
             )
         }
@@ -89,16 +88,15 @@ export const MapPointer = ({ position }) => {
     return (
         <>
             <mesh
-                position={[position[0], position[1] + 1.0, position[2]]}
+                position={position}
                 scale={[0.1, 0.1, 0.1]}
-                rotation={[0.1, 0, 0]}
+                rotation={[0.6, 0, 0]}
                 visible={false}
                 ref={meshRef}
                 material={material}
+                geometry={geometry}
                 castShadow
-            >
-                <bufferGeometry attach="geometry" {...geometry} />
-            </mesh>
+            ></mesh>
         </>
     )
 }

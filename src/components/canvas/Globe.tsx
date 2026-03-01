@@ -38,6 +38,7 @@ export const Globe = forwardRef(({ position, lightPosition }, ref) => {
     const geometry = useMemo(() => {
         //let geom = new THREE.IcosahedronGeometry(3, 16)
         let geom = new THREE.SphereGeometry(3, 128, 128)
+        geom.rotateY(-Math.PI) // Rotate to align with texture
         geom.computeTangents() // Compute tangents for normal mapping if needed
         geom.computeVertexNormals() // Ensure normals are computed for lighting
         // log position
@@ -47,7 +48,6 @@ export const Globe = forwardRef(({ position, lightPosition }, ref) => {
     const targetEuler = useMemo(() => new THREE.Euler(), [])
 
     useFrame((state, delta) => {
-        console.log(waveNormalA.wrapS)
         const material = ref.current?.material as THREE.ShaderMaterial
         state.camera.updateMatrixWorld() // Ensure camera matrices are up to date
         if (material) {
