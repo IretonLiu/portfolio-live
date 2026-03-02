@@ -3,11 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { projects, experiences, publications } from '../../data/content'
 import { Entry } from '../ui/Entry'
 
+import {
+    useGlobeRotationStore,
+    usePointerAnimationStore,
+} from '../../store/useStore'
+
 interface TabPanelsProps {
     activeTab: string
 }
 
 export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
+    const setGlobeRotation = useGlobeRotationStore(
+        (state) => state.setTargetGlobeRotation
+    )
+    const increasePointerAnimationCounter = usePointerAnimationStore(
+        (state) => state.increasePointerAnimationCounter
+    )
     return (
         <div className="relative pb-10">
             <AnimatePresence mode="wait">
@@ -105,6 +116,11 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                                 sub={project.sub}
                                 desc={project.desc}
                                 delay={index * 0.1}
+                                onclick={() => {
+                                    if (project.onclick) {
+                                        window.open(project.onclick, '_blank')
+                                    }
+                                }}
                             />
                         ))}
                     </motion.div>
@@ -123,9 +139,12 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                                 title={exp.title}
                                 sub={exp.sub}
                                 desc={exp.desc}
-                                globeRotation={{
-                                    theta: exp.location[0],
-                                    phi: exp.location[1],
+                                onclick={() => {
+                                    setGlobeRotation(
+                                        exp.location[0],
+                                        exp.location[1]
+                                    )
+                                    increasePointerAnimationCounter()
                                 }}
                                 delay={index * 0.1}
                             />

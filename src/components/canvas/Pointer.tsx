@@ -1,5 +1,5 @@
 /**
- * Asset: Vintage Camera
+ * Asset: Map Pointer
  * Author: Alexander (https://sketchfab.com/pradvin)
  * URL: https://sketchfab.com/3d-models/map-pointer-3d-icon-a30e2619537a425d90618ae5901c2989
  * License: Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/)

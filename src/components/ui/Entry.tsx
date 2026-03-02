@@ -1,42 +1,26 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import {
-    useGlobeRotationStore,
-    usePointerAnimationStore,
-} from '../../store/useStore'
-
 interface EntryProps {
     title: string
     sub: string
     desc: string
-    globeRotation?: { theta: number; phi: number }
     delay?: number
+    onclick: () => void
 }
 
 export const Entry: React.FC<EntryProps> = ({
     title,
     sub,
     desc,
-    globeRotation,
     delay = 0,
+    onclick,
 }) => {
-    const setGlobeRotation = useGlobeRotationStore(
-        (state) => state.setTargetGlobeRotation
-    )
-    const increasePointerAnimationCounter = usePointerAnimationStore(
-        (state) => state.increasePointerAnimationCounter
-    )
     return (
         <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: delay }}
-            onClick={() => {
-                increasePointerAnimationCounter()
-                if (globeRotation) {
-                    setGlobeRotation(globeRotation.theta, globeRotation.phi)
-                }
-            }}
+            onClick={onclick}
             className={`
         group relative py-6 border-b border-white/5 cursor-pointer
         hover:bg-white/[0.02] -mx-4 px-4 transition-colors duration-300

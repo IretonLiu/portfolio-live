@@ -1,10 +1,17 @@
 export const projects = [
     {
         id: 'archviz', // or whatever your ID is
-        title: 'Interactive Architectural Visualization',
+        title: 'Cirrus: Interactive Architectural Visualization',
         sub: 'React Three Fiber / GLSL',
         desc: 'High fidelity real-time interior rendering on the web. Features custom shader materials for high-fidelity performance on mobile devices.',
-        onclick: 'https://[your-demo-link].com',
+        onclick: 'https://cirrus-8b6.pages.dev',
+    },
+    {
+        id: 'dunant', // or whatever your ID is
+        title: 'Henry Dunant Bust Reconstruction',
+        sub: 'Threejs / 3D Gaussian Splatting',
+        desc: '3D reconstruction of a bust of Henry Dunant using a custom Threejs implementation of 3D Gaussian Splatting.',
+        onclick: 'https://iretonliu.github.io',
     },
     {
         id: 'sterkfontein',
