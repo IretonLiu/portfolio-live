@@ -166,6 +166,7 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                                 sub={pub.sub}
                                 desc={pub.desc}
                                 delay={index * 0.1}
+                                onclick={() => {}}
                             />
                         ))}
                     </motion.div>
