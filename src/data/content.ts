@@ -1,13 +1,20 @@
 export const projects = [
     {
-        id: 'archviz', // or whatever your ID is
+        id: 'coffee corner',
+        title: 'Pourover: an interactive demo',
+        sub: 'WebGL / GLSL (React Three Fiber)',
+        desc: 'An interactive WebGL demo of a cosy coffee pourover setup.',
+        onclick: 'https://pourover.pages.dev',
+    },
+    {
+        id: 'archviz',
         title: 'Cirrus: Interactive Architectural Visualization',
-        sub: 'React Three Fiber / GLSL',
+        sub: 'WebGL / GLSL (React Three Fiber)',
         desc: 'High fidelity real-time interior rendering on the web. Features custom shader materials for high-fidelity performance on mobile devices.',
         onclick: 'https://cirrus-8b6.pages.dev',
     },
     {
-        id: 'dunant', // or whatever your ID is
+        id: 'dunant',
         title: 'Henry Dunant Bust Reconstruction',
         sub: 'Threejs / 3D Gaussian Splatting',
         desc: '3D reconstruction of a bust of Henry Dunant using a custom Threejs implementation of 3D Gaussian Splatting.',
