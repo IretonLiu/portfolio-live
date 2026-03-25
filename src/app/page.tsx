@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { SocialLinks } from '@/components/ui/SocialLinks'
 import { Tabs } from '@/components/ui/Tabs'
