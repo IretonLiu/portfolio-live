@@ -5,9 +5,6 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
     title: 'Ireton Liu - Computer Vision Researcher & Creative Developer',
-    icons: {
-        icon: 'coffee-beans.png',
-    },
 }
 const barlowCondensed = Barlow_Condensed({
     subsets: ['latin'],

@@ -1,7 +1,7 @@
 export const projects = [
     {
         id: 'coffee corner',
-        title: 'Pour: an interactive demo',
+        title: 'Pourover: an interactive demo',
         sub: 'WebGL / GLSL (React Three Fiber)',
         desc: 'An interactive WebGL demo for coffee lovers.',
         onclick: 'https://pourover.pages.dev',
