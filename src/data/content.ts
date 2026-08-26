@@ -1,19 +1,5 @@
 export const projects = [
     {
-        id: 'coffee corner',
-        title: 'Pourover: an interactive demo',
-        sub: 'WebGL / GLSL (React Three Fiber)',
-        desc: 'An interactive WebGL demo for coffee lovers.',
-        onclick: 'https://pourover.pages.dev',
-    },
-    {
-        id: 'archviz',
-        title: 'Cirrus: Interactive Architectural Visualization',
-        sub: 'WebGL / GLSL (React Three Fiber)',
-        desc: 'High fidelity real-time interior rendering on the web. Features custom shader materials for high-fidelity performance on mobile devices.',
-        onclick: 'https://cirrus-8b6.pages.dev',
-    },
-    {
         id: 'dunant',
         title: 'Henry Dunant Bust Reconstruction',
         sub: 'Threejs / 3D Gaussian Splatting',
@@ -112,20 +98,21 @@ export const experiences = [
 export const publications = [
     {
         id: 'sterkfontein',
-        title: 'A 3D Reconstruction of the Sterkfontein Caves using Novel View Synthesis',
-        sub: 'In progress (aiming ECCV 2026)',
-        desc: 'Ongoing collaboration with Brown University, developing a novel view synthesis framework for high-fidelity 3D reconstruction of the Sterkfontein Caves.',
+        title: 'The Sterkfontein Caves Dataset: A Novel View Synthesis Challenge from the Cradle of Humankind',
+        sub: 'ECCV 2026',
+        desc: 'A novel lowlight dataset for Novel View Synthesis, featuring unique challenges and settings that shows exisiting lowlight NVS methods struggle to generalise to.',
+        onclick: 'https://visual.cs.brown.edu/projects/sterkfontein-webpage/',
     },
     {
         id: 'mineplanner',
         title: 'MinePlanner: A Benchmark for Long-Horizon Planning in Large Minecraft Worlds',
         sub: 'ICAPS 2023',
-        desc: 'Introduced a benchmark environment for evaluating planning algorithms in expansive, procedurally generated Minecraft worlds. Provided new insights into long-horizon planning under uncertainty.',
+        desc: 'https://arxiv.org/abs/2312.12891',
     },
     {
         id: 'hwfc',
         title: 'HWFC - Hierarchical Wave Function Collapse',
         sub: 'AAAI 2022',
-        desc: 'Presented a hierarchical extension to the Wave Function Collapse algorithm, enabling more scalable and efficient procedural content generation in complex environments.',
+        desc: 'https://ojs.aaai.org/index.php/AIIDE/article/view/27498',
     },
 ]
