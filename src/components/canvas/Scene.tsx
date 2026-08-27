@@ -124,7 +124,7 @@ export const Scene = () => {
                         }
 
                         // Very occasional short tearing bursts.
-                        float glitchWindow = 1.0 - smoothstep(0.0, 0.035, fract(uTime * 0.045 + 0.72));
+                        float glitchWindow = 1.0 - smoothstep(0.0, 0.01, fract(uTime * 0.05 + 0.37));
                         float glitchFrame = floor(uTime * 12.0);
                         float bandId = floor(vUv.y * 16.0);
                         float band = step(0.55, hash(vec2(bandId, glitchFrame)));
