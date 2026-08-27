@@ -1,6 +1,4 @@
 import * as THREE from 'three'
-import React, { useLayoutEffect } from 'react'
-import { useThree } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
 
 export default function ParallaxCamera({ amplitude = 1, damping = 0.05 }) {

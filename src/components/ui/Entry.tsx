@@ -5,7 +5,7 @@ interface EntryProps {
     sub: string
     desc: string
     delay?: number
-    onclick: () => void
+    onclick?: () => void
 }
 
 export const Entry: React.FC<EntryProps> = ({
@@ -30,7 +30,7 @@ export const Entry: React.FC<EntryProps> = ({
                 <h3 className="text-base font-medium text-gray-100 group-hover:text-accent transition-colors duration-300 font-mono tracking-normal">
                     {title}
                 </h3>
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                <span className="text-xs font-medium text-accent uppercase tracking-wider mb-2">
                     {sub}
                 </span>
                 <p className="text-sm text-gray-400 leading-relaxed font-sans">

@@ -2,18 +2,12 @@ export const globeVertexShader = `
 #include <common>
 #include <shadowmap_pars_vertex>
 
-flat varying vec3 vNormal;
 attribute vec4 tangent;
-varying vec3 vTangent;
-varying vec3 vBitangent;
 varying vec3 vPosition;
 varying vec2 vUv;
 varying mat3 vTBN;
-varying float vDisp;
-varying vec4 vShadowCoord;
 
 uniform sampler2D uDisplacementMap;
-float remap(float x) { return log(x + 1.0); }
 
 void main() {
     #include <beginnormal_vertex>
@@ -29,11 +23,7 @@ void main() {
   }
 
   vec3 dispPosition = position + normal * disp*0.4;
-  vDisp = disp;
-  vNormal = normalize( normal);
-  vTangent = normalize( tangent.xyz);
-  vBitangent = normalize( bitangent);
-   vTBN = mat3(vTangent,  vBitangent, vNormal);
+  vTBN = mat3(normalize(tangent.xyz), normalize(bitangent), normalize(normal));
 
   vUv = uv;
   vPosition = (modelMatrix * vec4(dispPosition, 1.0)).xyz;
@@ -54,23 +44,20 @@ export const globeFragmentShader = `
 precision highp float;
 
 
-flat varying vec3 vNormal;
-varying vec3 vTangent;
-varying vec3 vBitangent;
-varying float vDisp;
 varying vec3 vPosition;
 varying mat3 vTBN;
 varying vec2 vUv;
-varying vec4 vShadowCoord;
 
 uniform float uTime;
-uniform vec2 iResolution;
+uniform float uDayNightTime;
+uniform float uLocalHour;
 uniform vec3 uLightPos;
 uniform vec3 uCameraPos;
 uniform vec3 uMousePoint;
 uniform float uMouseHit;
 uniform float uBlendRadius;
 uniform sampler2D uTexture;
+uniform sampler2D uNightLights;
 uniform sampler2D uNormalMapA;
 uniform sampler2D uNormalMapB;
 uniform sampler2D uDisplacementMap;
@@ -173,26 +160,6 @@ vec3 getNormalFromMap(sampler2D uDisplacementMap, vec2 uv, float normalStrength,
     return normal;
 }
 
-float gaussian1D(float x, float center, float sigma) {
-    float diff = x - center;
-    float exponent = -(diff * diff) / (2.0 * sigma * sigma);
-    return exp(exponent);
-}
-
-float raySphereIntersect(vec3 rayOrigin, vec3 rayDir, vec3 sphereCenter, float sphereRadius) {
-    vec3 oc = rayOrigin - sphereCenter;
-    float a = dot(rayDir, rayDir);
-    float b = 2.0 * dot(oc, rayDir);
-    float c = dot(oc, oc) - sphereRadius * sphereRadius;
-    float discriminant = b * b - 4.0 * a * c;
-
-    if (discriminant < 0.0) {
-        return -1.0; // No intersection
-    } else {
-        return (-b - sqrt(discriminant)) / (2.0 * a); // Return nearest intersection
-    }
-}
-
 void main() {
 
 
@@ -237,7 +204,28 @@ void main() {
 
     vec3 color = whiteColor;
 
-    earthColor += earthAlbedo * vec3(0.8); // ambient term
+    // Day/night and real Black Marble city lights are applied only to the
+    // colour earth reveal, never to the pale white base globe.
+    float eveningNight = smoothstep(17.5, 20.0, uLocalHour);
+    float morningNight = 1.0 - smoothstep(5.0, 7.0, uLocalHour);
+    float dayNightCycle = max(eveningNight, morningNight);
+    float angularNight = 1.0 - smoothstep(-0.24, 0.32, dot(displacedNormal, L));
+    float nightMask = angularNight * dayNightCycle;
+
+    earthColor += earthAlbedo * vec3(0.8); // ambient term, unchanged from original day look
+    vec3 nightColor = earthColor * vec3(0.16, 0.20, 0.32) + earthAlbedo * vec3(0.04, 0.06, 0.10);
+    earthColor = mix(earthColor, nightColor, nightMask * 0.82);
+
+    // Delay Black Marble sampling/visibility so the colour reveal starts as the
+    // normal daytime globe before cities fade in later.
+    float cityLightIntro = max(smoothstep(18.0, 20.0, uLocalHour), morningNight);
+    if (cityLightIntro > 0.001 && nightMask > 0.001) {
+        float cityLights = texture2D(uNightLights, vUv).r;
+        cityLights = smoothstep(0.02, 0.62, pow(cityLights, 0.65));
+        float cityLightAmount = clamp(cityLights * nightMask * cityLightIntro * 2.8, 0.0, 1.0);
+        vec3 cityLightColor = vec3(1.0, 0.62, 0.28) * cityLightAmount;
+        earthColor = clamp(earthColor + cityLightColor, 0.0, 1.0);
+    }
     color += whiteAlbedo * vec3(0.8); // ambient term
 
     if (uMouseHit > 0.5) {
@@ -248,8 +236,6 @@ void main() {
         float mask = smoothstep(radius + edgeSoftness, radius - edgeSoftness, dist);
         color = mix(color, earthColor, mask);
     }
-    vec3 baseColor = vec3(0.1, 0.6, 0.9); // The sphere's color
-
     gl_FragColor = vec4(color, 1.0);
 
 }

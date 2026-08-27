@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import React, { forwardRef, useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { vertexShader, fragmentShader } from './shaders/infiniteStudioShaders'
 import { useFrame, useThree } from '@react-three/fiber'
 
@@ -14,7 +14,7 @@ export const InfiniteStudio = ({
     lightPosition,
 }: InfiniteStudioProps) => {
     const { size } = useThree()
-    const ref = React.useRef<THREE.Mesh>(null)
+    const ref = useRef<THREE.Mesh>(null)
     const uniforms = useMemo(
         () => ({
             iResolution: { value: new THREE.Vector2() },

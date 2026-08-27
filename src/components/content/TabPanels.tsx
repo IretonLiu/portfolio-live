@@ -37,10 +37,7 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                             Vision researcher by training, and obsessed with
                             creative coding and 3D graphics in my spare time:) I
                             bring a unique blend of technical expertise
-                            creativity to my work. This unique technical
-                            background help me build complex interactive
-                            experiences and robust pipelines without
-                            compromising on performance.
+                            creativity to my work.
                         </p>
                         <ul className="list-disc pl-5 space-y-2 marker:text-accent">
                             <li>
@@ -89,19 +86,29 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                                     Threejs; React Three Fiber;
                                 </span>
                             </li>
-                            <li>
-                                <strong className="text-white font-mono text-sm font-normal tracking-wide uppercase">
-                                    Robotics & SLAM
-                                </strong>{' '}
-                                <span className="block text-sm mt-1">
-                                    Navigation and mapping algorithms for
-                                    autonomous systems.
-                                </span>
-                            </li>
                         </ul>
                     </motion.div>
                 )}
 
+                {activeTab === 'publications' && (
+                    <motion.div
+                        key="publications"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        {publications.map((pub, index) => (
+                            <Entry
+                                key={pub.id}
+                                title={pub.title}
+                                sub={pub.sub}
+                                desc={pub.desc}
+                                delay={index * 0.1}
+                                onclick={pub.onclick ? () => window.open(pub.onclick, '_blank') : undefined}
+                            />
+                        ))}
+                    </motion.div>
+                )}
                 {activeTab === 'projects' && (
                     <motion.div
                         key="projects"
@@ -152,25 +159,6 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                     </motion.div>
                 )}
 
-                {activeTab === 'publications' && (
-                    <motion.div
-                        key="publications"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        {publications.map((pub, index) => (
-                            <Entry
-                                key={pub.id}
-                                title={pub.title}
-                                sub={pub.sub}
-                                desc={pub.desc}
-                                delay={index * 0.1}
-                                onclick={() => {}}
-                            />
-                        ))}
-                    </motion.div>
-                )}
             </AnimatePresence>
         </div>
     )

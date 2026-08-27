@@ -1,15 +1,12 @@
 import * as THREE from 'three'
-import { useRef, useMemo, useEffect, forwardRef } from 'react'
-import { useFrame, useThree, extend } from '@react-three/fiber'
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
+import { useRef, useMemo, useEffect } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
 import { fragmentShader as noiseFragmentShader } from './shaders/noiseShaders'
 import {
     fragmentShader as cloudFragmentShader,
     vertexShader as cloudVertexShader,
 } from './shaders/cloudShaders'
-import { Texture, Group } from 'three'
-
-extend({ ShaderPass })
+import { Texture } from 'three'
 
 function use3DNoise(gl: THREE.WebGLRenderer) {
     return useMemo(() => {
@@ -117,7 +114,7 @@ export const CloudCompositor = ({
     lightPosition,
     sharedUniforms,
 }: CloudCompositorProps) => {
-    const { gl, size, viewport } = useThree()
+    const { gl, size } = useThree()
     const ref = useRef<THREE.Mesh>(null)
     const materialRef = useRef<THREE.ShaderMaterial>(null)
 

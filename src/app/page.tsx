@@ -9,7 +9,7 @@ import { CanvasContainer } from '@/components/canvas/CanvasContainer'
 import Loader from '@/components/ui/Loader'
 export default function Home() {
     const [activeTab, setActiveTab] = useState('about')
-    const tabs = ['about', 'projects', 'experiences', 'publications']
+    const tabs = ['about',  'publications','projects', 'experiences']
     return (
         <main className="relative w-full min-h-screen flex flex-col lg:flex-row ">
             <Loader />
@@ -30,7 +30,10 @@ export default function Home() {
                         >
                             HI! I'm...
                         </motion.span>
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3">
+                        <h1
+                            className="chromatic-name text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3"
+                            data-text="IRETON LIU"
+                        >
                             IRETON LIU
                         </h1>
                         <p className="text-lg sm:text-xl font-mono text-blue-200/80 mb-6">
@@ -57,7 +60,7 @@ export default function Home() {
                 </div>
             </div>
             <motion.div
-                className="fixed top-6 left-auto right-6 lg:top-8 lg:-right-20 z-50 cursor-pointer mix-blend-screen hover:scale-105 transition-transform duration-300"
+                className="fixed top-[16vh] right-[8vw] md:top-[14vh] lg:right-[10vw] xl:right-[12vw] 2xl:right-[16vw] z-50 cursor-pointer mix-blend-screen hover:scale-105 transition-transform duration-300"
                 initial={{ opacity: 0, rotate: 0 }}
                 animate={{ opacity: 0.8, rotate: -5 }}
                 whileHover={{ opacity: 1 }}
@@ -83,7 +86,7 @@ export default function Home() {
                     alt="About This"
                     width={240}
                     height={240}
-                    className="w-32 h-32 md:w-64 md:h-64  2xl:mr-150 opacity-80 hover:opacity-100 transition-opacity"
+                    className="w-32 h-32 md:w-56 md:h-56 xl:w-64 xl:h-64 opacity-80 hover:opacity-100 transition-opacity"
                 />
             </motion.div>
         </main>

@@ -42,6 +42,69 @@ body::before {
     z-index: -1;
 }
 
+.chromatic-name {
+    position: relative;
+    display: inline-block;
+    text-shadow:
+        2px 0 0 rgba(0, 220, 255, 0.45),
+        -2px 0 0 rgba(255, 40, 90, 0.4);
+}
+
+.chromatic-name::before,
+.chromatic-name::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+}
+
+.chromatic-name::before {
+    color: rgba(0, 220, 255, 0.55);
+    transform: translate(2px, 0);
+    animation: name-glitch-cyan 8s steps(1, end) infinite;
+}
+
+.chromatic-name::after {
+    color: rgba(255, 40, 90, 0.48);
+    transform: translate(-2px, 0);
+    animation: name-glitch-red 8s steps(1, end) infinite;
+}
+
+@keyframes name-glitch-cyan {
+    0%,
+    96%,
+    100% {
+        transform: translate(2px, 0);
+        clip-path: inset(0 0 0 0);
+    }
+    96.4% {
+        transform: translate(6px, -1px);
+        clip-path: inset(18% 0 66% 0);
+    }
+    96.8% {
+        transform: translate(-3px, 1px);
+        clip-path: inset(62% 0 20% 0);
+    }
+}
+
+@keyframes name-glitch-red {
+    0%,
+    96%,
+    100% {
+        transform: translate(-2px, 0);
+        clip-path: inset(0 0 0 0);
+    }
+    96.4% {
+        transform: translate(-6px, 1px);
+        clip-path: inset(58% 0 24% 0);
+    }
+    96.8% {
+        transform: translate(3px, -1px);
+        clip-path: inset(16% 0 68% 0);
+    }
+}
+
 /* Custom Scrollbar for the sidebar */
 .custom-scrollbar::-webkit-scrollbar {
     width: 4px;

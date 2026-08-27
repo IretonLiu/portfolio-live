@@ -45,25 +45,39 @@ export const projects = [
 
 export const experiences = [
     {
+        id: 'pygio',
+        title: 'Lead Data Scientist',
+        sub: 'Pygio (South Africa) — July 2023–July 2024; 2025-present',
+        desc: 'Designed machine learning models for financial forecasting and NLP.',
+        location: [0.9, -0.6],
+    },
+    {
+        id: 'epfl',
+        title: 'Research Engineer Intern',
+        sub: 'EPFL (Lausanne, Switzerland) — June 205-Aug 2025',
+        desc: '3D reconstruction project in collaboration with the ICRC.',
+        location: [1.2, 0.75],
+    },
+    {
+        id: 'brown',
+        title: 'Visiting Student Researcher',
+        sub: 'Brown University (Providence, US) — Feb 2023-May 2023',
+        desc: 'Research on 3D reconstruction of the Sterkfontein Caves, focusing on low-light novel view synthesis.',
+        location: [2.55, 0.62],
+    },
+    {
         id: 'missionmobile',
-        title: 'Data Scientist',
-        sub: 'Mission Mobile (South Africa) — 2025–present',
+        title: 'Lead Data Scientist',
+        sub: 'Mission Mobile (South Africa) — Dec 2025-Aug 2026',
         desc: 'Lead architect in pipelines to optimise mobile-device lending strategies, leveraging machine learning models to analyse user behavior and credit risk.',
         location: [0.9, -0.6],
     },
     {
         id: 'dragonfruit',
         title: 'Machine Learning Engineer Intern',
-        sub: 'Dragonfruit AI (US, remote) — 2025',
+        sub: 'Dragonfruit AI (US, remote) — Sept 2025-Oct 2025',
         desc: 'Built and scaled distributed computing platforms for efficient AI training and inference.',
         location: [0.9, -0.6],
-    },
-    {
-        id: 'epfl',
-        title: 'Research Engineer Intern',
-        sub: 'EPFL (Lausanne, Switzerland) — 2025',
-        desc: '3D reconstruction project in collaboration with the ICRC.',
-        location: [1.2, 0.75],
     },
     //{
     //    id: 'brown',
@@ -72,13 +86,6 @@ export const experiences = [
     //    desc: 'Exhange research semester at Brown University, working on 3D reconstruction of the Sterkfontein Caves.',
     //    location: [0.8, -1.8],
     //},
-    {
-        id: 'pygio',
-        title: 'Data Scientist',
-        sub: 'Pygio (South Africa) — 2023–2024',
-        desc: 'Designed machine learning models for financial forecasting and NLP.',
-        location: [0.9, -0.6],
-    },
     {
         id: 'halo',
         title: 'Robotics Engineer Intern',

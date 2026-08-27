@@ -1,12 +1,11 @@
 'use client'
 
-import React, { useMemo, useRef, useLayoutEffect } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { globeVertexShader, globeFragmentShader } from './shaders/globeShaders'
 import { easing } from 'maath'
-import { forwardRef } from 'react'
 import { useGlobeRotationStore } from '../../store/useStore'
 // axes helper
 
@@ -19,6 +18,11 @@ const PBR_PARAMS = {
 const LIGHT_PARAMS = {
     color: '#ffffff',
     intensity: 1.0,
+}
+
+const getLocalHour = () => {
+    const now = new Date()
+    return now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600
 }
 
 interface GlobeProps {
@@ -41,9 +45,16 @@ export const Globe = ({
     // leva for pbr parameters
 
     // Load textures
-    const [displacementMap, textureMap, waveNormalA, waveNormalB] = useTexture([
+    const [
+        displacementMap,
+        textureMap,
+        nightLightsMap,
+        waveNormalA,
+        waveNormalB,
+    ] = useTexture([
         '/assets/textures/depth_image.png',
         '/assets/textures/texture_vibrant_low_res.png',
+        '/assets/textures/night_lights_4096.jpg',
         '/assets/textures/wave_a.png',
         '/assets/textures/wave_b.png',
     ])
@@ -58,10 +69,10 @@ export const Globe = ({
     }, [])
 
     const targetEuler = useMemo(() => new THREE.Euler(), [])
+    const localHourUpdateTimer = useRef(0)
 
     useFrame((state, delta) => {
         const material = materialRef?.current
-        state.camera.updateMatrixWorld() // Ensure camera matrices are up to date
         if (material) {
             if (sharedUniforms) {
                 material.uniforms.uMouseHit.value =
@@ -73,6 +84,12 @@ export const Globe = ({
                     sharedUniforms.uBlendRadius.value
             }
             material.uniforms.uTime.value += delta * 0.01
+            material.uniforms.uDayNightTime.value = state.clock.elapsedTime
+            localHourUpdateTimer.current += delta
+            if (localHourUpdateTimer.current > 1) {
+                material.uniforms.uLocalHour.value = getLocalHour()
+                localHourUpdateTimer.current = 0
+            }
             material.uniforms.uCameraPos.value.copy(state.camera.position)
         }
         const target = useGlobeRotationStore.getState().targetGlobeRotation
@@ -85,10 +102,13 @@ export const Globe = ({
     const uniforms = useMemo(() => {
         const customUniforms = {
             uTime: { value: 0.0 },
+            uDayNightTime: { value: 0.0 },
+            uLocalHour: { value: getLocalHour() },
             uMouseHit: { value: 0.0 }, // 0 = no hit, 1 = hit
             uMousePoint: { value: new THREE.Vector3(999, 999, 999) }, // Initialise it way off-screen
             uBlendRadius: { value: 0.0 }, // Radius for blending effect around hit point
             uTexture: { value: textureMap },
+            uNightLights: { value: nightLightsMap },
             uDisplacementMap: { value: displacementMap },
             uNormalMapA: { value: waveNormalA },
             uNormalMapB: { value: waveNormalB },
@@ -114,7 +134,13 @@ export const Globe = ({
             THREE.UniformsLib.lights,
             customUniforms,
         ])
-    }, [displacementMap, textureMap, waveNormalA, waveNormalB])
+    }, [
+        displacementMap,
+        textureMap,
+        nightLightsMap,
+        waveNormalA,
+        waveNormalB,
+    ])
 
     return (
         <>
