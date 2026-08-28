@@ -37,7 +37,7 @@ export default function Home() {
                             IRETON LIU
                         </h1>
                         <p className="text-lg sm:text-xl font-mono text-blue-200/80 mb-6">
-                            Computer Vision | Creative Dev | Data Science
+                            Computer Vision | Graphics | Creative Dev | Data Science
                         </p>
                         <SocialLinks />
                     </motion.div>

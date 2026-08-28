@@ -102,6 +102,7 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ activeTab }) => {
                                 key={pub.id}
                                 title={pub.title}
                                 sub={pub.sub}
+                                authors={pub.authors}
                                 desc={pub.desc}
                                 delay={index * 0.1}
                                 onclick={pub.onclick ? () => window.open(pub.onclick, '_blank') : undefined}

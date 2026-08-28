@@ -4,6 +4,7 @@ interface EntryProps {
     title: string
     sub: string
     desc: string
+    authors?: string[]
     delay?: number
     onclick?: () => void
 }
@@ -12,6 +13,7 @@ export const Entry: React.FC<EntryProps> = ({
     title,
     sub,
     desc,
+    authors,
     delay = 0,
     onclick,
 }) => {
@@ -33,6 +35,22 @@ export const Entry: React.FC<EntryProps> = ({
                 <span className="text-xs font-medium text-accent uppercase tracking-wider mb-2">
                     {sub}
                 </span>
+                {authors && (
+                    <p className="text-xs text-gray-400 leading-relaxed font-sans mb-2">
+                        {authors.map((author, index) => (
+                            <React.Fragment key={author}>
+                                {index > 0 && ', '}
+                                {author === 'Ireton Liu' ? (
+                                    <strong className="font-semibold text-gray-100">
+                                        {author}
+                                    </strong>
+                                ) : (
+                                    author
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </p>
+                )}
                 <p className="text-sm text-gray-400 leading-relaxed font-sans">
                     {desc}
                 </p>
