@@ -89,14 +89,14 @@ export const experiences = [
     {
         id: 'halo',
         title: 'Robotics Engineer Intern',
-        sub: 'Halo, World! (Tokyo, Japan) — 2023',
+        sub: 'Halo, World! (Tokyo, Japan) — Jan 2023-Feb 2023',
         desc: 'Implemented SLAM algorithms for autonomous navigation and 3D mapping.',
         location: [-1.1, 0.55],
     },
     {
         id: 'wits',
         title: 'Sessional Lecturer',
-        sub: 'University of the Witwatersrand (South Africa) — 2023',
+        sub: 'University of the Witwatersrand (South Africa) — June 2023-Dec 2023; June 2024-Dec 2024',
         desc: 'Taught undergraduate courses on data structures and algorithms and computer graphics',
         location: [0.9, -0.6],
     },
