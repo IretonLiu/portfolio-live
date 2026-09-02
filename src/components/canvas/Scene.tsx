@@ -25,11 +25,29 @@ const pointerPosition = new THREE.Vector3(4.4, 0.5, 3.2)
 const outofviewPointerPosition = new THREE.Vector3(999, 999, 999)
 const ENABLE_POST_PROCESSING = true
 const ENABLE_GLOBE_DRAG_CONTROLS = true
+const MAIN_LIGHT_DAY_INTENSITY = 3.2
+const MAIN_LIGHT_NIGHT_INTENSITY = 0.2
+const NIGHT_START_HOUR = 18
+const NIGHT_END_HOUR = 7
+
+const getLocalHour = () => {
+    const now = new Date()
+    return now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600
+}
+
+const isLocalNight = () => {
+    const hour = getLocalHour()
+    return hour >= NIGHT_START_HOUR || hour < NIGHT_END_HOUR
+}
+
+const getMainLightIntensity = () =>
+    isLocalNight() ? MAIN_LIGHT_NIGHT_INTENSITY : MAIN_LIGHT_DAY_INTENSITY
 
 export const Scene = () => {
     const { camera, gl, scene, size } = useThree()
     const virtualScene = useRef<THREE.Scene>(null)
     const globeRef = useRef<THREE.Mesh>(null)
+    const mainLightRef = useRef<THREE.DirectionalLight>(null)
 
     const pointerAnimationCounter = usePointerAnimationStore(
         (state) => state.pointerAnimationCounter
@@ -243,6 +261,11 @@ export const Scene = () => {
     })
 
     useFrame((state, delta) => {
+        const mainLight = mainLightRef.current
+        if (mainLight) {
+            mainLight.intensity = getMainLightIntensity()
+        }
+
         // Keep camera matrices current for raycasting and shader uniforms.
         state.camera.updateMatrixWorld()
         const mouseX = state.pointer.x
@@ -350,8 +373,9 @@ export const Scene = () => {
             {createPortal(
                 <>
                     <directionalLight
+                        ref={mainLightRef}
                         position={lightPosition}
-                        intensity={2.5}
+                        intensity={getMainLightIntensity()}
                         color={0xffffff}
                         castShadow
                         shadow-mapSize-width={1024}

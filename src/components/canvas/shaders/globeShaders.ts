@@ -170,6 +170,16 @@ void main() {
 
     vec3 L = normalize(lightPos - vPosition);
 
+    // Local-time lighting scalar. This is an immediate day/night shift, not a
+    // gradual blend and not a surface-normal terminator effect.
+    float isNight = (uLocalHour >= 18.0 || uLocalHour < 7.0) ? 1.0 : 0.0;
+    float directLightFactor = isNight > 0.5 ? 0.16 : 1.35;
+    float ambientLightFactor = isNight > 0.5 ? 0.55 : 1.0;
+    LightParameters timeOfDayLightParams = LightParameters(
+      lightParams.color,
+      lightParams.intensity * directLightFactor
+    );
+
 
     float depth = texture2D(uDisplacementMap, vUv).r;
     vec3 displacedNormal = getNormalFromMap(uDisplacementMap, vUv, 50.0, vec2(2048.0)); 
@@ -191,12 +201,12 @@ void main() {
         vec3 blendedNormal = mix(normalA, normalB, 0.5);
         vec3 waveNormal = normalize(vTBN * blendedNormal);
         MaterialParameters oceanMaterial = MaterialParameters(vec3(0.0), 0.0, 0.1, vec3(0.04)); // non-metallic, low roughness
-        earthColor = PBRLighting(waveNormal, V, L, earthAlbedo, oceanMaterial, lightParams)* depth;
+        earthColor = PBRLighting(waveNormal, V, L, earthAlbedo, oceanMaterial, timeOfDayLightParams)* depth;
 
     }else{
-        earthColor = PBRLighting(displacedNormal, V, L, earthAlbedo, materialParams, lightParams);
+        earthColor = PBRLighting(displacedNormal, V, L, earthAlbedo, materialParams, timeOfDayLightParams);
     }
-    whiteColor = PBRLighting(displacedNormal, V, L, whiteAlbedo, materialParams, lightParams);
+    whiteColor = PBRLighting(displacedNormal, V, L, whiteAlbedo, materialParams, timeOfDayLightParams);
 
     float shadowPower = getShadowMask();
     earthColor *= shadowPower;
@@ -206,27 +216,25 @@ void main() {
 
     // Day/night and real Black Marble city lights are applied only to the
     // colour earth reveal, never to the pale white base globe.
-    float eveningNight = smoothstep(17.5, 20.0, uLocalHour);
-    float morningNight = 1.0 - smoothstep(5.0, 7.0, uLocalHour);
-    float dayNightCycle = max(eveningNight, morningNight);
-    float angularNight = 1.0 - smoothstep(-0.24, 0.32, dot(displacedNormal, L));
-    float nightMask = angularNight * dayNightCycle;
+    float nightMask = isNight;
 
-    earthColor += earthAlbedo * vec3(0.8); // ambient term, unchanged from original day look
-    vec3 nightColor = earthColor * vec3(0.16, 0.20, 0.32) + earthAlbedo * vec3(0.04, 0.06, 0.10);
-    earthColor = mix(earthColor, nightColor, nightMask * 0.82);
+    earthColor += earthAlbedo * vec3(0.8) * ambientLightFactor; // ambient/daylight term
+    vec3 nightColor = earthColor * vec3(0.35, 0.42, 0.68) + earthAlbedo * vec3(0.10, 0.13, 0.20);
+    if (isNight > 0.5) {
+        earthColor = nightColor;
+    }
 
     // Delay Black Marble sampling/visibility so the colour reveal starts as the
     // normal daytime globe before cities fade in later.
-    float cityLightIntro = max(smoothstep(18.0, 20.0, uLocalHour), morningNight);
+    float cityLightIntro = isNight;
     if (cityLightIntro > 0.001 && nightMask > 0.001) {
         float cityLights = texture2D(uNightLights, vUv).r;
-        cityLights = smoothstep(0.02, 0.62, pow(cityLights, 0.65));
+        cityLights = smoothstep(0.02, 0.82, pow(cityLights, 0.95));
         float cityLightAmount = clamp(cityLights * nightMask * cityLightIntro * 2.8, 0.0, 1.0);
         vec3 cityLightColor = vec3(1.0, 0.62, 0.28) * cityLightAmount;
         earthColor = clamp(earthColor + cityLightColor, 0.0, 1.0);
     }
-    color += whiteAlbedo * vec3(0.8); // ambient term
+    color += whiteAlbedo * vec3(0.8) * ambientLightFactor; // ambient/daylight term
 
     if (uMouseHit > 0.5) {
         vec3 warpedPosition = vec3(vPosition.x, vPosition.y, vPosition.z + sin(uTime * 80.0) * 0.5); // Add a pulsating effect
