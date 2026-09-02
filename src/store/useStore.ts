@@ -5,13 +5,18 @@ interface GlobeRotationState {
         theta: number
         phi: number
     }
+    targetGlobeRotationVersion: number
     setTargetGlobeRotation: (theta: number, phi: number) => void
 }
 
 export const useGlobeRotationStore = create<GlobeRotationState>((set) => ({
     targetGlobeRotation: { theta: 0, phi: 0 },
+    targetGlobeRotationVersion: 0,
     setTargetGlobeRotation: (theta, phi) =>
-        set({ targetGlobeRotation: { theta, phi } }),
+        set((state) => ({
+            targetGlobeRotation: { theta, phi },
+            targetGlobeRotationVersion: state.targetGlobeRotationVersion + 1,
+        })),
 }))
 
 interface PointerAnimationState {

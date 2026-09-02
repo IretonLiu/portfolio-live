@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo, useEffect, type RefObject } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { fragmentShader as noiseFragmentShader } from './shaders/noiseShaders'
 import {
@@ -100,6 +100,7 @@ interface CloudCompositorProps {
     lithosphereRadius?: number
     position?: THREE.Vector3
     lightPosition?: THREE.Vector3
+    globeRef?: RefObject<THREE.Mesh | null>
     sharedUniforms?: {
         uMousePoint: { value: THREE.Vector3 }
         uMouseHit: { value: number }
@@ -112,11 +113,13 @@ export const CloudCompositor = ({
     lithosphereRadius = 3.0,
     position,
     lightPosition,
+    globeRef,
     sharedUniforms,
 }: CloudCompositorProps) => {
     const { gl, size } = useThree()
     const ref = useRef<THREE.Mesh>(null)
     const materialRef = useRef<THREE.ShaderMaterial>(null)
+    const inverseCloudRotation = useMemo(() => new THREE.Matrix3(), [])
 
     const noiseTexture = use3DNoise(gl)
 
@@ -141,6 +144,7 @@ export const CloudCompositor = ({
             uCameraNear: { value: 0.1 },
             uCameraFar: { value: 100 },
             uSphereCenter: { value: position },
+            uCloudInverseRotation: { value: new THREE.Matrix3() },
             // this is the radius of the outer shell of the clouds,
             uSphereRadius: { value: lithosphereRadius + 3.0 },
             uLithosphereRadius: { value: lithosphereRadius },
@@ -179,6 +183,17 @@ export const CloudCompositor = ({
                 size.width * window.devicePixelRatio,
                 size.height * window.devicePixelRatio
             )
+            if (globeRef?.current) {
+                globeRef.current.updateMatrixWorld()
+                inverseCloudRotation
+                    .setFromMatrix4(globeRef.current.matrixWorld)
+                    .invert()
+                material.uniforms.uCloudInverseRotation.value.copy(
+                    inverseCloudRotation
+                )
+            } else {
+                material.uniforms.uCloudInverseRotation.value.identity()
+            }
             material.uniforms.uCameraPos.value.copy(state.camera.position)
             material.uniforms.uInverseProjectionMatrix.value.copy(
                 state.camera.projectionMatrixInverse

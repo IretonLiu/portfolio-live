@@ -181,7 +181,12 @@ uniform vec3 uLightPos;
 uniform vec3 uLightColor;
 uniform mat4 uInverseProjectionMatrix;
 uniform mat4 uInverseViewMatrix;
+uniform mat3 uCloudInverseRotation;
 uniform sampler3D uPrecomputedNoise;
+
+vec3 toCloudLocal(vec3 worldPos) {
+  return uCloudInverseRotation * (worldPos - uSphereCenter);
+}
 
 mat3 rotationY(float angle) {
   float c = cos(angle);
@@ -222,8 +227,10 @@ float lightMarch(vec3 ro, vec3 rd, float radialMask) {
   float totalDensity = 0.0;
   float lightAbsorption = 0.0;
   for (int i = 0; i < steps; i++) {
-    vec3 noisePos =
-        cartesianToRadial(ro + rd * (float(i) * stepSize), uSphereRadius);
+    vec3 noisePos = cartesianToRadial(
+        toCloudLocal(ro + rd * (float(i) * stepSize)),
+        uSphereRadius
+    );
 
     vec4 noise = texture(uPrecomputedNoise, noisePos) * radialMask;
     float density = noiseToCloud(noise);
@@ -310,7 +317,7 @@ void main() {
         float radialMask = smoothPump(heightFraction, 0.0);
 
         vec3 randomOffset = vec3(texture(uPrecomputedNoise, vec3(uv, 0.5)).xyz);
-        vec3 noisePos = cartesianToRadial(pos - uSphereCenter, uSphereRadius)+ 0.01 * randomOffset;
+        vec3 noisePos = cartesianToRadial(toCloudLocal(pos), uSphereRadius)+ 0.01 * randomOffset;
 
         // modify density based on distance to the core of the sphere
         // float density = max(sampleDensity(noisePos / PI), 0.0) * radialMask;

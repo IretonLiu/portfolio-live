@@ -11,7 +11,11 @@ import { easing } from 'maath'
 import { InfiniteStudio } from './InfiniteStudio'
 import ParallexCamera from './ParallaxCamera'
 import { MapPointer } from './Pointer'
-import { usePointerAnimationStore } from '../../store/useStore'
+import {
+    useGlobeRotationStore,
+    usePointerAnimationStore,
+} from '../../store/useStore'
+import { useGlobeDragControls } from './hooks/useGlobeDragControls'
 
 const radius = 3.0
 const cloudPostMaskRadius = 4.2
@@ -20,14 +24,27 @@ const lightPosition = new THREE.Vector3(6, 7, 10)
 const pointerPosition = new THREE.Vector3(4.4, 0.5, 3.2)
 const outofviewPointerPosition = new THREE.Vector3(999, 999, 999)
 const ENABLE_POST_PROCESSING = true
+const ENABLE_GLOBE_DRAG_CONTROLS = true
 
 export const Scene = () => {
     const { camera, gl, scene, size } = useThree()
     const virtualScene = useRef<THREE.Scene>(null)
+    const globeRef = useRef<THREE.Mesh>(null)
 
     const pointerAnimationCounter = usePointerAnimationStore(
         (state) => state.pointerAnimationCounter
     )
+    const targetGlobeRotation = useGlobeRotationStore(
+        (state) => state.targetGlobeRotation
+    )
+
+    const markerLocalPosition = useMemo(() => {
+        const localAnchor = pointerPosition.clone().sub(globePosition)
+        const targetRotation = new THREE.Quaternion().setFromEuler(
+            new THREE.Euler(targetGlobeRotation.phi, targetGlobeRotation.theta, 0)
+        )
+        return localAnchor.applyQuaternion(targetRotation.invert())
+    }, [targetGlobeRotation.phi, targetGlobeRotation.theta])
 
     if (virtualScene.current === null) {
         virtualScene.current = new THREE.Scene()
@@ -184,6 +201,8 @@ export const Scene = () => {
     const rayOrigin = useMemo(() => new THREE.Vector3(), [])
     const rayDir = useMemo(() => new THREE.Vector3(), [])
     const hitPoint = useMemo(() => new THREE.Vector3(), [])
+    const markerWorldPosition = useMemo(() => new THREE.Vector3(), [])
+    const markerRef = useRef<THREE.Mesh>(null)
     const globeScreen = useMemo(() => new THREE.Vector3(), [])
     const globeScreenEdge = useMemo(() => new THREE.Vector3(), [])
     const cameraRight = useMemo(() => new THREE.Vector3(), [])
@@ -213,6 +232,15 @@ export const Scene = () => {
             pointerShowing.current = true
         }
     }, [pointerAnimationCounter])
+
+    const globeDragControls = useGlobeDragControls({
+        enabled: ENABLE_GLOBE_DRAG_CONTROLS,
+        globeRef,
+        globePosition,
+        radius,
+        sensitivity: 4.5,
+        damping: 0.92,
+    })
 
     useFrame((state, delta) => {
         // Keep camera matrices current for raycasting and shader uniforms.
@@ -248,7 +276,12 @@ export const Scene = () => {
             sharedUniforms.uMouseHit.value = 1.0
             easing.damp(sharedUniforms.uBlendRadius, 'value', 3.0, 0.25, delta)
         } else if (pointerShowing.current) {
-            sharedUniforms.uMousePoint.value.copy(pointerPosition)
+            if (markerRef.current) {
+                markerRef.current.getWorldPosition(markerWorldPosition)
+                sharedUniforms.uMousePoint.value.copy(markerWorldPosition)
+            } else {
+                sharedUniforms.uMousePoint.value.copy(pointerPosition)
+            }
             sharedUniforms.uMouseHit.value = 1.0
             easing.damp(sharedUniforms.uBlendRadius, 'value', 3.0, 0.25, delta)
         } else {
@@ -324,12 +357,18 @@ export const Scene = () => {
                         shadow-mapSize-width={1024}
                         shadow-mapSize-height={1024}
                     />
-                    <MapPointer position={pointerPosition} />,
                     <Globe
+                        ref={globeRef}
                         position={globePosition}
                         lightPosition={lightPosition}
+                        manualControlActiveRef={globeDragControls.isActiveRef}
                         sharedUniforms={sharedUniforms}
-                    />
+                    >
+                        <MapPointer
+                            ref={markerRef}
+                            position={markerLocalPosition}
+                        />
+                    </Globe>
                 </>,
                 virtualScene.current
             )}
@@ -337,6 +376,7 @@ export const Scene = () => {
             <CloudCompositor
                 position={globePosition}
                 lightPosition={lightPosition}
+                globeRef={globeRef}
                 diffuseTexture={fbo.texture}
                 depthTexture={fbo.depthTexture}
                 lithosphereRadius={3.0}

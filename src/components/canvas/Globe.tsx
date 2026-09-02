@@ -1,6 +1,13 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import {
+    forwardRef,
+    useCallback,
+    useMemo,
+    useRef,
+    type MutableRefObject,
+    type ReactNode,
+} from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
@@ -28,17 +35,18 @@ const getLocalHour = () => {
 interface GlobeProps {
     position: THREE.Vector3
     lightPosition: THREE.Vector3
+    manualControlActiveRef?: MutableRefObject<boolean>
+    children?: ReactNode
     sharedUniforms?: {
         uMouseHit: { value: number }
         uMousePoint: { value: THREE.Vector3 }
         uBlendRadius: { value: number }
     }
 }
-export const Globe = ({
-    position,
-    lightPosition,
-    sharedUniforms,
-}: GlobeProps) => {
+export const Globe = forwardRef<THREE.Mesh, GlobeProps>(function Globe(
+    { position, lightPosition, manualControlActiveRef, children, sharedUniforms },
+    forwardedRef
+) {
     const ref = useRef<THREE.Mesh>(null)
     const materialRef = useRef<THREE.ShaderMaterial>(null)
 
@@ -68,7 +76,23 @@ export const Globe = ({
         return geom
     }, [])
 
+    const setMeshRef = useCallback(
+        (node: THREE.Mesh | null) => {
+            ref.current = node
+            if (typeof forwardedRef === 'function') {
+                forwardedRef(node)
+            } else if (forwardedRef) {
+                forwardedRef.current = node
+            }
+        },
+        [forwardedRef]
+    )
+
     const targetEuler = useMemo(() => new THREE.Euler(), [])
+    const targetAnimatingRef = useRef(false)
+    const activeTargetVersionRef = useRef(
+        useGlobeRotationStore.getState().targetGlobeRotationVersion
+    )
     const localHourUpdateTimer = useRef(0)
 
     useFrame((state, delta) => {
@@ -92,10 +116,31 @@ export const Globe = ({
             }
             material.uniforms.uCameraPos.value.copy(state.camera.position)
         }
-        const target = useGlobeRotationStore.getState().targetGlobeRotation
-        if (ref.current) {
+        const rotationState = useGlobeRotationStore.getState()
+        const receivedNewTarget =
+            rotationState.targetGlobeRotationVersion !==
+            activeTargetVersionRef.current
+        if (receivedNewTarget) {
+            activeTargetVersionRef.current =
+                rotationState.targetGlobeRotationVersion
+            targetAnimatingRef.current = true
+        }
+
+        if (manualControlActiveRef?.current && !receivedNewTarget) {
+            targetAnimatingRef.current = false
+        }
+
+        if (ref.current && targetAnimatingRef.current) {
+            const target = rotationState.targetGlobeRotation
             targetEuler.set(target.phi, target.theta, 0)
             easing.dampE(ref.current.rotation, targetEuler, 0.1, delta)
+
+            if (
+                Math.abs(ref.current.rotation.x - targetEuler.x) < 0.001 &&
+                Math.abs(ref.current.rotation.y - targetEuler.y) < 0.001
+            ) {
+                targetAnimatingRef.current = false
+            }
         }
     })
 
@@ -145,7 +190,7 @@ export const Globe = ({
     return (
         <>
             <mesh
-                ref={ref}
+                ref={setMeshRef}
                 geometry={geometry}
                 position={position}
                 receiveShadow
@@ -162,10 +207,11 @@ export const Globe = ({
                     }}
                     uniforms={uniforms}
                 />
+                {children}
             </mesh>
         </>
     )
-}
+})
 
 Globe.displayName = 'Globe'
 export default Globe
