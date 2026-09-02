@@ -54,7 +54,7 @@ export const experiences = [
     {
         id: 'epfl',
         title: 'Research Engineer Intern',
-        sub: 'EPFL (Lausanne, Switzerland) — June 205-Aug 2025',
+        sub: 'EPFL (Lausanne, Switzerland) — June 2025-Aug 2025',
         desc: '3D reconstruction project in collaboration with the ICRC.',
         location: [1.2, 0.75],
     },
